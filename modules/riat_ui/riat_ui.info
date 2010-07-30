@@ -1,0 +1,8 @@
+; $Id$
+name = "riat ui"
+description = "Provides a user interface to the riat api."
+package = "Relationship Is Already Taken"
+core = 6.x
+dependencies[] = riat
+
+version = 3.x-dev

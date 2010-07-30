@@ -1,7 +1,8 @@
-; $Id: riat.info,v 1.1 2009/06/18 03:54:43 eclipsegc Exp $
-name = "RIAT API"
-description = "Enables module developers to create relationships of certain contexts between arbitrary definitions.  Also contains basic definitions of its own for Parent, Child, Sibling and SubUser relationships."
+; $Id$
+name = "riat core"
+description = "Provides a plugin architecture to allows developers to define relationship between various types of drupal objects."
 package = "Relationship Is Already Taken"
 core = 6.x
-dependencies[] = views
-dependencies[] = token
+dependencies[] = context_admin
+
+version = 3.x-dev
