@@ -1,0 +1,37 @@
+<?php
+
+function riat_parent_child_riat_relationships() {
+  return array(
+    'parent_child' => array(
+      'title' => t('Parent Child Relationship'),
+      'description' => t('The parent child relationships denotes that one node will contain the others.  This is presented in a pure hierarchy in which no child ever has multiple parents, but may have multiple siblings.'),
+      'module' => 'riat_parent_child',
+      'hooks' => array(
+        'nodeapi',
+        'form_alter',
+      ),
+      'entity' => array(
+        'from' => array(
+          'node',
+        ),
+        'to' => array(
+          'node',
+        ),
+      ),
+    ),
+  );
+}
+
+function riat_parent_child_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'context_admin' && $plugin == 'context_admin') {
+    return 'plugins/'. $plugin;
+  }
+}
+
+function riat_parent_child_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  
+}
+
+function riat_parent_child_form_alter(&$form, $form_state, $form_id) {
+  
+}

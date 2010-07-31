@@ -66,9 +66,18 @@ class riat_export_ui extends ctools_export_ui {
   }
   
   function manage_form(&$form, &$form_state) {
-    $form['test'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Test'),
+    // Find the menu path.
+    $menu = $form_state['plugin']['menu']['menu prefix'] .'/'. $form_state['plugin']['menu']['menu item'] .'/'. $form_state['plugin']['menu']['items']['manage']['path'];
+    // Find the relationship name.
+    $ctools_export_ui = array_search('%ctools_export_ui', explode('/', $menu));
+    
+    $form['name'] = array(
+      '#type' => 'value',
+      '#value' => arg($ctools_export_ui),
+    );
+    $form['pchid'] = array(
+      '#type' => 'value',
+      '#value' => 0,
     );
   }
 }

@@ -1,0 +1,84 @@
+<?php
+
+function riat_parent_child_install() {
+  drupal_install_schema('riat_parent_child');
+}
+
+function riat_parent_child_uninstall() {
+  drupal_uninstall_schema('riat_parent_child');
+}
+
+function riat_parent_child_scheam() {
+  // Data tables
+  $schema['riat_parent_child_direct'] = array(
+    'description' => t('A table that holds the basic associations for all parent_child relationships.'),
+    'fields' => array(
+      'name' => array(
+        'type' => 'varchar',
+        'length' => '32',
+        'not null' => TRUE,
+        'description' => 'The relationship definition in which this item participates',
+      ),
+      'chid' => array(
+        'type' => 'int',
+        'description' => t('The chain identifier.'),
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'id' => array(
+        'description' => t('The primary object identifier.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'aid' => array(
+        'description' => t('The associated object identifier.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+    ),
+   'indexes' => array(
+     'id' => array('id'),
+     'aid' => array('aid'),
+     'name' => array('name'),
+    ),
+  );
+  $schema['riat_parent_child_hierarchy'] = array(
+    'description' => t('A table that holds every ancestor/descendant entry for all parent_child relationships.'),
+    'fields' => array(
+      'name' => array(
+        'type' => 'varchar',
+        'length' => '32',
+        'not null' => TRUE,
+        'description' => 'The relationship definition in which this item participates',
+      ),
+      'chid' => array(
+        'description' => t('The primary chain link identifier.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'id' => array(
+        'description' => t('The primary object identifier.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'did' => array(
+        'description' => t('The descendant object identifier.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+    ),
+   'indexes' => array(
+     'name' => array('name'),
+     'chid' => array('chid'),
+     'id' => array('id'),
+     'did' => array('did'),
+    ),
+  );
+  return $schema;
+}

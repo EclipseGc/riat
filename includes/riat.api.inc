@@ -1,5 +1,15 @@
 <?php
 
+function riat_load_relationship_types($type = NULL) {
+  $types = module_invoke_all('riat_relationships');
+  if (is_null($type)) {
+    return $types;
+  }
+  else {
+    return $types[$type];
+  }
+}
+
 /**
  * Loads various relationship elements.
  *

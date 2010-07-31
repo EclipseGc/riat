@@ -1,0 +1,37 @@
+<?php
+
+function riat_sub_users_riat_relationships() {
+  return array(
+    'sub_users' => array(
+      'title' => t('Sub Users'),
+      'description' => t('Provides a mechanism for users to create and manage other users who are sub-ordinate to their own user.'),
+      'module' => 'riat_sub_users',
+      'hooks' => array(
+        'user',
+        'form_alter',
+      ),
+      'entity' => array(
+        'from' => array(
+          'user',
+        ),
+        'to' => array(
+          'user',
+        ),
+      ),
+    ),
+  );
+}
+
+function riat_sub_users_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'context_admin' && $plugin == 'context_admin') {
+    return 'plugins/'. $plugin;
+  }
+}
+
+function riat_sub_users_user($op, &$edit, &$account, $category = NULL) {
+  
+}
+
+function riat_sub_users_form_alter(&$form, $form_state, $form_id) {
+  
+}

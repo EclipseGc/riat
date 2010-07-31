@@ -1,0 +1,8 @@
+; $Id$
+name = Sub Users
+description = Provides a mechanism for users to create and manage other users who are sub-ordinate to their own user.
+package = "Relationship Is Already Taken"
+core = 6.x
+dependencies[] = riat
+
+version = 3.x-dev
