@@ -32,7 +32,7 @@ function riat_load_relationship_tree($relationship, $type = 'full', $a3 = NULL) 
     case 'full':
       $query = db_query("SELECT * FROM {riat_tree_definition} WHERE name = '%s' ORDER BY depth", $relationship);
       while ($result = db_fetch_object($query)) {
-        $definition->tree[$result->depth][$result->pchid][$result->chid] = $result;
+        $definition->tree[$result->pchid][$result->chid] = $result;
         $definition->raw[$result->chid] = $result;
       }
       break;
@@ -44,14 +44,14 @@ function riat_load_relationship_tree($relationship, $type = 'full', $a3 = NULL) 
       $results = array();
       riat_recursive_query("SELECT * FROM {riat_tree_definition} WHERE name = '%s' AND chid = %d", $args, 'pchid', $results);
       foreach ($results as $result) {
-        $definition->tree[$result->depth][$result->pchid][$result->chid] = $result;
+        $definition->tree[$result->pchid][$result->chid] = $result;
         $definition->raw[$result->chid] = $result;
       }
       break;
     case 'depth':
       $query = db_query("SELECT * FROM {riat_tree_definition} WHERE name = '%s' AND depth <= %d", $relationship, $a3);
       while ($result = db_fetch_object($query)) {
-        $definition->tree[$result->depth][$result->pchid][$result->chid] = $result;
+        $definition->tree[$result->pchid][$result->chid] = $result;
         $definition->raw[$result->chid] = $result;
       }
       break;

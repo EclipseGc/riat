@@ -70,15 +70,32 @@ class riat_export_ui extends ctools_export_ui {
     $menu = $form_state['plugin']['menu']['menu prefix'] .'/'. $form_state['plugin']['menu']['menu item'] .'/'. $form_state['plugin']['menu']['items']['manage']['path'];
     // Find the relationship name.
     $ctools_export_ui = array_search('%ctools_export_ui', explode('/', $menu));
-    
-    $form['name'] = array(
-      '#type' => 'value',
-      '#value' => arg($ctools_export_ui),
-    );
-    $form['pchid'] = array(
-      '#type' => 'value',
-      '#value' => 0,
-    );
+
+    $tree = riat_load_relationship_tree(arg($ctools_export_ui));
+    foreach ($tree->raw as $item) {
+      $form[$item->chid]['#item'] = $item;
+      $form[$item->chid]['title'] = array(
+        '#value' => $item->object_type .' '. $item->object .' '. $item->relationship,
+      );
+      $form[$item->chid]['chid'] = array(
+        '#type' => 'hidden',
+        '#value' => $item->chid,
+      );
+      $form[$item->chid]['pchid'] = array(
+        '#type' => 'textfield',
+        '#default_value' => $item->pchid,
+      );
+      $form[$item->chid]['weight'] = array(
+        '#type' => 'weight',
+        '#default_value' => $item->weight,
+      );
+      $form[$item->chid]['operations'] = array(
+        '#type' => 'markup',
+        '#value' => '',
+      );
+      $form['#theme'] = 'riat_manage_relationship_form';
+    }
+    return $form;
   }
 }
 

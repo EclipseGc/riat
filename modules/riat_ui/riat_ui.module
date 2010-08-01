@@ -12,3 +12,56 @@ function riat_ui_ctools_plugin_directory($module, $plugin) {
 function riat_ui_perm() {
   return array('administer riat relationships');
 }
+
+function riat_ui_theme($existing, $type, $theme, $path) {
+  return array(
+    'riat_manage_relationship_form' => array(
+      'arguments' => array('form' => NULL),
+    ),
+  );
+}
+
+function theme_riat_manage_relationship_form($form) {
+  drupal_add_tabledrag('riat-overview', 'match', 'parent', 'riat-pchid', 'riat-pchid', 'riat-chid', TRUE, MENU_MAX_DEPTH - 1);
+  drupal_add_tabledrag('riat-overview', 'order', 'sibling', 'riat-weight');
+
+  $header = array(
+    t('Relationship'),
+    t('Weight'),
+    t('Operations'),
+    t('debug'),
+  );
+
+  $rows = array();
+  foreach (element_children($form) as $chid) {
+    if (is_numeric($chid)) {
+      $element = &$form[$chid];
+
+      // Add special classes to be used for tabledrag.js.
+      $element['#attributes'] = isset($element['#attributes']) ? $element['#attributes'] : array();
+      $element['pchid']['#attributes']['class'] = 'riat-pchid';
+      $element['chid']['#attributes']['class'] = 'riat-chid';
+      $element['weight']['#attributes']['class'] = 'riat-weight';
+  
+      // Change the parent field to a hidden. This allows any value but hides the field.
+      $element['pchid']['#type'] = 'hidden';
+  
+      $row = array();
+      $row[] = theme('indentation', $element['#item']->depth - 1) . drupal_render($element['title']);
+      $row[] = drupal_render($element['weight']) . drupal_render($element['pchid']) . drupal_render($element['chid']);
+      $row[] = drupal_render($element['operations']);
+      $row[] = $element['#item']->chid .' '. $element['#item']->pchid;
+  
+      $row = array_merge(array('data' => $row), $element['#attributes']);
+      $row['class'] = !empty($row['class']) ? $row['class'] .' draggable' : 'draggable';
+      $rows[] = $row;
+    }
+  }
+
+  $output = '';
+  if ($rows) {
+    $output .= theme('table', $header, $rows, array('id' => 'riat-overview'));
+  }
+  $output .= drupal_render($form);
+  return $output;
+}
