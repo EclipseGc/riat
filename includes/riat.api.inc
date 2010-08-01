@@ -36,6 +36,18 @@ function riat_load_relationship_tree($relationship, $type = 'full', $a3 = NULL) 
         $definition->raw[$result->chid] = $result;
       }
       break;
+    case 'recursive':
+      $args = array(
+        'name' => $relationship,
+        'chid' => $result->chid,
+      );
+      $results = array();
+      riat_recursive_query("SELECT * FROM {riat_tree_definition} WHERE name = '%s' AND pchid = %d", $args, 'chid', $results);
+      foreach ($results as $result) {
+        $definition->tree[$result->pchid][$result->chid] = $result;
+        $definition->raw[$result->chid] = $result;
+      }
+      break;
     case 'branch':
       $args = array(
         'name' => $relationship,
@@ -98,11 +110,13 @@ function riat_load_object_relationships($object, $id) {
  */
 
 function riat_recursive_query($query_str, $args, $key, &$results) {
-  $result = db_fetch_object(db_query($query_str, $args));
-  $results[] = $result;
-  if ($result->$key) {
-    $args[$key] = $result->$key;
-    riat_recursive_query($query_str, $args, $key, $results);
+  $query = db_query($query_str, $args);
+  while ($result = db_fetch_object($query)) {
+    $results[] = $result;
+    if ($result->$key) {
+      $args[$key] = $result->$key;
+      riat_recursive_query($query_str, $args, $key, $results);
+    }
   }
 }
 

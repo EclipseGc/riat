@@ -71,7 +71,7 @@ class riat_export_ui extends ctools_export_ui {
     // Find the relationship name.
     $ctools_export_ui = array_search('%ctools_export_ui', explode('/', $menu));
 
-    $tree = riat_load_relationship_tree(arg($ctools_export_ui));
+    $tree = riat_load_relationship_tree(arg($ctools_export_ui), 'recursive');
     foreach ($tree->raw as $item) {
       $form[$item->chid]['#item'] = $item;
       $form[$item->chid]['title'] = array(
@@ -95,6 +95,14 @@ class riat_export_ui extends ctools_export_ui {
       );
       $form['#theme'] = 'riat_manage_relationship_form';
     }
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Save'),
+    );
+    $form['reset'] = array(
+      '#type' => 'submit',
+      '#value' => t('Reset to Defaults'),
+    );
     return $form;
   }
 }

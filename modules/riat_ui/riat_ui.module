@@ -29,7 +29,6 @@ function theme_riat_manage_relationship_form($form) {
     t('Relationship'),
     t('Weight'),
     t('Operations'),
-    t('debug'),
   );
 
   $rows = array();
@@ -50,7 +49,6 @@ function theme_riat_manage_relationship_form($form) {
       $row[] = theme('indentation', $element['#item']->depth - 1) . drupal_render($element['title']);
       $row[] = drupal_render($element['weight']) . drupal_render($element['pchid']) . drupal_render($element['chid']);
       $row[] = drupal_render($element['operations']);
-      $row[] = $element['#item']->chid .' '. $element['#item']->pchid;
   
       $row = array_merge(array('data' => $row), $element['#attributes']);
       $row['class'] = !empty($row['class']) ? $row['class'] .' draggable' : 'draggable';
