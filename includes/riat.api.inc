@@ -185,5 +185,10 @@ function riat_relationship_export($object, $indent) {
 }
 
 function riat_relationship_import($object, $indent) {
-  drupal_set_message('<pre>'. print_r($object, TRUE) .'</pre>');
+  //drupal_set_message('<pre>'. print_r($object, TRUE) .'</pre>');
+}
+
+function riat_relationship_delete($object) {
+  db_query("DELETE FROM {riat_definition} WHERE name = '%s'", $object->name);
+  db_query("DELETE FROM {riat_tree_definition} WHERE name = '%s'", $object->name);
 }

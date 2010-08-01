@@ -27,6 +27,7 @@ function riat_schema() {
       ),
       'export callback' => 'riat_relationship_export',
       //'import callback' => 'riat_relationship_import',
+      'delete callback' => 'riat_relationship_delete',
     ),
     'fields' => array(
       'name' => array(
