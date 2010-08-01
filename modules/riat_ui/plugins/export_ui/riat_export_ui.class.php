@@ -89,6 +89,7 @@ class riat_export_ui extends ctools_export_ui {
         '#type' => 'weight',
         '#default_value' => $item->weight,
       );
+      //$operations = 
       $form[$item->chid]['operations'] = array(
         '#type' => 'markup',
         '#value' => '',

@@ -91,6 +91,10 @@ function riat_ui_ctools_export_ui_form(&$form, &$form_state) {
       '#default_value' => $form_state['item']->object_type,
     );
   }
+  $form['relationships'] = array(
+    '#type' => 'value',
+    '#value' => $form_state['item']->relationships,
+  );
 }
 
 function riat_ui_ctools_export_ui_form_validate(&$form, &$form_state) {
@@ -98,5 +102,11 @@ function riat_ui_ctools_export_ui_form_validate(&$form, &$form_state) {
 }
 
 function riat_ui_ctools_export_ui_form_submit(&$form, &$form_state) {
-  
+  if ($form_state['values']['op'] == 'Save') {
+    $relationships = $form_state['values']['relationships'];
+    foreach ($relationships as $relationship) {
+      $relationship['name'] = $form_state['values']['name'];
+      db_query("INSERT INTO {riat_tree_definition} (chid, pchid, name, object, object_type, relationship, depth, weight) VALUES (%d, %d, '%s', '%s', '%s', '%s', %d, %d)", $relationship);
+    }
+  }
 }

@@ -121,9 +121,8 @@ function riat_recursive_query($query_str, $args, $key, &$results) {
 }
 
 function riat_relationship_export($object, $indent) {
-  $object = riat_load_relationship_tree($object->name);
-  
-  
+  $relationship = riat_load_relationship_tree($object->name);
+
   $schema = ctools_export_get_schema($object->table);
   if (!isset($identifier)) {
     $identifier = $schema['export']['identifier'];
@@ -136,11 +135,6 @@ function riat_relationship_export($object, $indent) {
   }
   if (!empty($schema['export']['api']['current_version'])) {
     $output .= $indent . '$' . $identifier . '->api_version = ' . $schema['export']['api']['current_version'] . ";\n";
-  }
-
-  // Put top additions here:
-  foreach ($additions as $field => $value) {
-    $output .= $indent . '$' . $identifier . '->' . $field . ' = ' . ctools_var_export($value, $indent) . ";\n";
   }
 
   $fields = $schema['fields'];
@@ -181,11 +175,15 @@ function riat_relationship_export($object, $indent) {
       $output .= $indent . '$' . $identifier . '->' . $field . ' = ' . ctools_var_export($value, $indent) . ";\n";
     }
   }
-
-  // And bottom additions here
-  foreach ($additions2 as $field => $value) {
-    $output .= $indent . '$' . $identifier . '->' . $field . ' = ' . ctools_var_export($value, $indent) . ";\n";
+  // Put relationships here:
+  $relationships = $relationship->raw ? $relationship->raw : array();
+  foreach ($relationships as $field => $value) {
+    $output .= $indent . '$' . $identifier . '->relationships[' . $field . '] = ' . ctools_var_export((array) $value, $indent) . ";\n";
   }
 
   return $output;
+}
+
+function riat_relationship_import($object, $indent) {
+  drupal_set_message('<pre>'. print_r($object, TRUE) .'</pre>');
 }

@@ -25,7 +25,7 @@ function riat_schema() {
         'minimum_version' => 3,
         'current_version' => 3,
       ),
-      //'export callback' => 'riat_relationship_export',
+      'export callback' => 'riat_relationship_export',
       //'import callback' => 'riat_relationship_import',
     ),
     'fields' => array(

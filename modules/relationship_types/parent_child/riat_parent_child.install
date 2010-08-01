@@ -8,7 +8,7 @@ function riat_parent_child_uninstall() {
   drupal_uninstall_schema('riat_parent_child');
 }
 
-function riat_parent_child_scheam() {
+function riat_parent_child_schema() {
   // Data tables
   $schema['riat_parent_child_direct'] = array(
     'description' => t('A table that holds the basic associations for all parent_child relationships.'),

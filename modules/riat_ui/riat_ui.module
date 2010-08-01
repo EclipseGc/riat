@@ -13,6 +13,16 @@ function riat_ui_perm() {
   return array('administer riat relationships');
 }
 
+function riat_ui_form_alter(&$form, $form_state, $form_id) {
+  if ($form_id == 'riat_ui_relationship_item_form') {
+    $breadcrumb = drupal_get_breadcrumb();
+    $breadcrumb[] = l('Administer', 'admin');
+    $breadcrumb[] = l('Site Building', 'admin/build');
+    $breadcrumb[] = l('Relationships', 'admin/build/relationships');
+    drupal_set_breadcrumb($breadcrumb);
+  }
+}
+
 function riat_ui_theme($existing, $type, $theme, $path) {
   return array(
     'riat_manage_relationship_form' => array(
