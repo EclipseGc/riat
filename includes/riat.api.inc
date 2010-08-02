@@ -121,7 +121,7 @@ function riat_recursive_query($query_str, $args, $key, &$results) {
 }
 
 function riat_relationship_export($object, $indent) {
-  $relationship = riat_load_relationship_tree($object->name);
+  $relationship = riat_load_relationship_tree($object->name, 'recursive');
 
   $schema = ctools_export_get_schema($object->table);
   if (!isset($identifier)) {

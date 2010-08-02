@@ -92,7 +92,7 @@ class riat_export_ui extends ctools_export_ui {
       //$operations = 
       $form[$item->chid]['operations'] = array(
         '#type' => 'markup',
-        '#value' => '',
+        '#value' => riat_ui_get_operations($item),
       );
       $form['#theme'] = 'riat_manage_relationship_form';
     }

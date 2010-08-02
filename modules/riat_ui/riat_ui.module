@@ -1,5 +1,38 @@
 <?php
 
+function riat_ui_menu() {
+  $items = array();
+  $items['admin/build/relationships/list/%ctools_export_ui/manage/%riat_chid/add'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('riat_ui_add_relationship', 4, 6),
+    'access arguments' => array('administer riat relationships'),
+    'file' => 'riat.admin.inc',
+    'file path' => drupal_get_path('module', 'riat') .'/includes',
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/build/relationships/list/%ctools_export_ui/manage/%riat_chid/delete'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('riat_ui_delete_relationship', 4, 6),
+    'access arguments' => array('administer riat relationships'),
+    'file' => 'riat.admin.inc',
+    'file path' => drupal_get_path('module', 'riat') .'/includes',
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+function riat_ui_forms($form_id, $args) {
+  $forms['riat_ui_add_relationship'] = array(
+    'callback' => 'riat_add_relationship',
+  );
+  $forms['riat_ui_delete_relationship'] = array(
+    'callback' => 'riat_delete_relationship',
+  );
+  return $forms;
+}
+
+
 /**
  * Implementation of hook_ctools_plugin_directory().
  */
@@ -72,4 +105,14 @@ function theme_riat_manage_relationship_form($form) {
   }
   $output .= drupal_render($form);
   return $output;
+}
+
+function riat_ui_get_operations($item, $path = 'admin/build/relationships/list/%relationship/manage') {
+  drupal_add_css(drupal_get_path('module', 'riat_ui') .'/css/riat_ui.css');
+  $path = str_replace('%relationship', $item->name, $path);
+  $output = array();
+  $operations = module_invoke_all('riat_ui_operations', $item->object, $item->object_type);
+  $output[] = l('Add Child', $path .'/'. $item->chid .'/add');
+  $output[] = l('Delete', $path .'/'. $item->chid .'/delete');
+  return theme('item_list', $output, NULL, 'ul', array('class' => 'riat-operations'));
 }
