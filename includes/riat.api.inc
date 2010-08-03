@@ -120,6 +120,25 @@ function riat_recursive_query($query_str, $args, $key, &$results) {
   }
 }
 
+function riat_relationship_load($chid, $name) {
+  if ($chid) {
+    return db_fetch_object(db_query("SELECT * FROM {riat_tree_definition} WHERE name = '%s' AND chid = %d", $name, $chid));
+  }
+  else {
+    return db_fetch_object(db_query("SELECT * FROM {riat_definition} WHERE name = '%s'", $name));
+  }
+}
+
+function riat_get_relationships($from = NULL) {
+  $relationships = module_invoke_all('riat_relationships');
+  foreach ($relationships as $key => $relationship) {
+    if ($relationship['entity']['from'][0] == $from) {
+      $results[$key] = $relationship['title'];
+    }
+  }
+  return $results;
+}
+
 function riat_relationship_export($object, $indent) {
   $relationship = riat_load_relationship_tree($object->name, 'recursive');
 

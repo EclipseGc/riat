@@ -2,17 +2,17 @@
 
 function riat_ui_menu() {
   $items = array();
-  $items['admin/build/relationships/list/%ctools_export_ui/manage/%riat_chid/add'] = array(
+  $items['admin/build/relationships/%/manage/%/add'] = array(
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('riat_ui_add_relationship', 4, 6),
+    'page arguments' => array('riat_ui_add_relationship', 3, 5),
     'access arguments' => array('administer riat relationships'),
     'file' => 'riat.admin.inc',
     'file path' => drupal_get_path('module', 'riat') .'/includes',
     'type' => MENU_CALLBACK,
   );
-  $items['admin/build/relationships/list/%ctools_export_ui/manage/%riat_chid/delete'] = array(
+  $items['admin/build/relationships/%ctools_export_ui/manage/%/delete'] = array(
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('riat_ui_delete_relationship', 4, 6),
+    'page arguments' => array('riat_ui_delete_relationship', 3, 5),
     'access arguments' => array('administer riat relationships'),
     'file' => 'riat.admin.inc',
     'file path' => drupal_get_path('module', 'riat') .'/includes',
@@ -52,6 +52,12 @@ function riat_ui_form_alter(&$form, $form_state, $form_id) {
     $breadcrumb[] = l('Administer', 'admin');
     $breadcrumb[] = l('Site Building', 'admin/build');
     $breadcrumb[] = l('Relationships', 'admin/build/relationships');
+    drupal_set_breadcrumb($breadcrumb);
+  }
+  if ($form_id == 'riat_ui_add_relationship') {
+    $relationship = riat_relationship_load(0, $form['name']['#value']);
+    $breadcrumb = drupal_get_breadcrumb();
+    $breadcrumb[] = l($relationship->title, "admin/build/relationships/list/$relationship->name/manage");
     drupal_set_breadcrumb($breadcrumb);
   }
 }
@@ -107,7 +113,7 @@ function theme_riat_manage_relationship_form($form) {
   return $output;
 }
 
-function riat_ui_get_operations($item, $path = 'admin/build/relationships/list/%relationship/manage') {
+function riat_ui_get_operations($item, $path = 'admin/build/relationships/%relationship/manage') {
   drupal_add_css(drupal_get_path('module', 'riat_ui') .'/css/riat_ui.css');
   $path = str_replace('%relationship', $item->name, $path);
   $output = array();
