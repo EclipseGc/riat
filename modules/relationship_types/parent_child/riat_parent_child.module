@@ -10,13 +10,11 @@ function riat_parent_child_riat_relationships() {
         'nodeapi',
         'form_alter',
       ),
-      'entity' => array(
-        'from' => array(
-          'node',
-        ),
-        'to' => array(
-          'node',
-        ),
+      'parent_entity' => array(
+        'node',
+      ),
+      'child_entity' => array(
+        'node',
       ),
     ),
   );

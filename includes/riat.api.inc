@@ -129,11 +129,23 @@ function riat_relationship_load($chid, $name) {
   }
 }
 
-function riat_get_relationships($from = NULL) {
+function riat_get_relationships($filter = NULL, $key = NULL) {
   $relationships = module_invoke_all('riat_relationships');
-  foreach ($relationships as $key => $relationship) {
-    if ($relationship['entity']['from'][0] == $from) {
-      $results[$key] = $relationship['title'];
+  if (!is_null($key)) {
+    return $relationships[$key];
+  }
+  $search_keys = array_keys($filter);
+  $results = array();
+  foreach ($relationships as $name => $relationship) {
+    if ($filter) {
+      foreach ($search_keys as $term) {
+        if (isset($relationship[$term]) && $relationship[$term] == $filter[$term]) {
+          $results[$name] = $relationship['title'];
+        }
+      }
+    }
+    else {
+      $results[$name] = $relationship['title'];
     }
   }
   return $results;

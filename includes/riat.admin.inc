@@ -12,7 +12,7 @@ function riat_add_relationship($form_state, $name, $chid) {
   );
   $relationship = riat_relationship_load($chid, $name);
   $parent = riat_relationship_load($relationship->pchid, $name);
-  $plugins = riat_get_relationships($parent->object);
+  $plugins = riat_get_relationships(array('parent_entity' => array($parent->object)));
   $form['object'] = array(
     '#type' => 'select',
     '#title' => t('Select an Object'),
