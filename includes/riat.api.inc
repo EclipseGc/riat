@@ -130,14 +130,17 @@ function riat_relationship_load($chid, $name) {
 }
 
 function riat_get_relationships($filter = NULL, $key = NULL) {
-  $relationships = module_invoke_all('riat_relationships');
+  static $relationships;
+  if (!$relationships) {
+    $relationships = module_invoke_all('riat_relationships');
+  }
   if (!is_null($key)) {
     return $relationships[$key];
   }
-  $search_keys = array_keys($filter);
   $results = array();
   foreach ($relationships as $name => $relationship) {
     if ($filter) {
+      $search_keys = array_keys($filter);
       foreach ($search_keys as $term) {
         if (isset($relationship[$term]) && $relationship[$term] == $filter[$term]) {
           $results[$name] = $relationship['title'];

@@ -6,6 +6,7 @@ function riat_parent_child_riat_relationships() {
       'title' => t('Parent Child Relationship'),
       'description' => t('The parent child relationships denotes that one node will contain the others.  This is presented in a pure hierarchy in which no child ever has multiple parents, but may have multiple siblings.'),
       'module' => 'riat_parent_child',
+      'add form' => 'riat_parent_child_add_form',
       'hooks' => array(
         'nodeapi',
         'form_alter',
@@ -24,6 +25,35 @@ function riat_parent_child_ctools_plugin_directory($module, $plugin) {
   if ($module == 'context_admin' && $plugin == 'context_admin') {
     return 'plugins/'. $plugin;
   }
+}
+
+function riat_parent_child_add_form($form_state, $relationship, $process) {
+  $form = array();
+  $types = node_get_types();
+  $options = array();
+  foreach ($types as $key => $type) {
+    $options[$key] = $type->name;
+  }
+  $form['types'] = array(
+    '#type' => 'select',
+    '#title' => t('Select a node type'),
+    '#options' => $options,
+    '#prefix' => '<div id="edit-parent-child-types-wrapper"><div id="edit-parent-child-types">',
+    '#suffix' => '</div></div>',
+  ) + $process;
+  $form['one_or_many'] = array(
+    '#type' => 'radios',
+    '#title' => t('Relationship mapping'),
+    '#options' => array(
+      'many' => t('One to Many'),
+      'one' => t('One to one'),
+    ),
+    '#default_value' => 'many',
+    '#prefix' => '<div id="edit-parent-child-one-or-many-wrapper"><div id="edit-parent-child-one-or-many">',
+    '#suffix' => '</div></div>',
+  ) + $process;
+  $form['one_or_many']['#process'][] = 'expand_radios';
+  return $form;
 }
 
 function riat_parent_child_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
