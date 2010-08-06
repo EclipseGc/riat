@@ -72,29 +72,35 @@ class riat_export_ui extends ctools_export_ui {
     $ctools_export_ui = array_search('%ctools_export_ui', explode('/', $menu));
 
     $tree = riat_load_relationship_tree(arg($ctools_export_ui), 'recursive');
-    foreach ($tree->raw as $item) {
-      $form[$item->chid]['#item'] = $item;
-      $form[$item->chid]['title'] = array(
-        '#value' => $item->object_type .' '. $item->object .' '. $item->relationship,
-      );
-      $form[$item->chid]['chid'] = array(
-        '#type' => 'hidden',
-        '#value' => $item->chid,
-      );
-      $form[$item->chid]['pchid'] = array(
-        '#type' => 'textfield',
-        '#default_value' => $item->pchid,
-      );
-      $form[$item->chid]['weight'] = array(
-        '#type' => 'weight',
-        '#default_value' => $item->weight,
-      );
-      //$operations = 
-      $form[$item->chid]['operations'] = array(
-        '#type' => 'markup',
-        '#value' => riat_ui_get_operations($item),
-      );
-      $form['#theme'] = 'riat_manage_relationship_form';
+    $form['base'] = array(
+      '#type' => 'markup',
+      '#value' => theme('riat_ui_base_relationship', $tree),
+    );
+    if ($tree->raw) {
+      foreach ($tree->raw as $item) {
+        $form[$item->chid]['#item'] = $item;
+        $form[$item->chid]['title'] = array(
+          '#value' => $item->object_type .' '. $item->object .' '. $item->relationship,
+        );
+        $form[$item->chid]['chid'] = array(
+          '#type' => 'hidden',
+          '#value' => $item->chid,
+        );
+        $form[$item->chid]['pchid'] = array(
+          '#type' => 'textfield',
+          '#default_value' => $item->pchid,
+        );
+        $form[$item->chid]['weight'] = array(
+          '#type' => 'weight',
+          '#default_value' => $item->weight,
+        );
+        //$operations = 
+        $form[$item->chid]['operations'] = array(
+          '#type' => 'markup',
+          '#value' => riat_ui_get_operations($item),
+        );
+        $form['#theme'] = 'riat_manage_relationship_form';
+      }
     }
     $form['submit'] = array(
       '#type' => 'submit',

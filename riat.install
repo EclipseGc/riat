@@ -98,12 +98,13 @@ function riat_schema() {
         'not null' => TRUE,
         'default' => '',
       ),
-      'object_type' => array(
-        'description' => t('The type of the associated object.'),
-        'type' => 'varchar',
-        'length' => 64,
+      'conf' => array(
+        'type' => 'text',
+        'size' => 'big',
+        'description' => 'A serialize array of relationship specific details from the custom relationship form.',
         'not null' => TRUE,
-        'default' => '',
+        'serialize' => TRUE,
+        'object default' => array(),
       ),
       'relationship' => array(
         'description' => t('The type of relationship that associates these two items.'),
@@ -127,10 +128,11 @@ function riat_schema() {
       ),
     ),
     'indexes' => array(
-     'depth' => array('depth'),
-     'name' => array('name'),
-     'pchid' => array('pchid'),
-     'chid' => array('chid'),
+      'name' => array('name'),
+      'pchid' => array('pchid'),
+      'chid' => array('chid'),
+      'depth' => array('depth'),
+      'weight' => array('weight'),
     ),
   );
   return $schema;

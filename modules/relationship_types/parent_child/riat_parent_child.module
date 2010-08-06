@@ -14,9 +14,7 @@ function riat_parent_child_riat_relationships() {
       'parent_entity' => array(
         'node',
       ),
-      'child_entity' => array(
-        'node',
-      ),
+      'child entity' => 'node',
     ),
   );
 }

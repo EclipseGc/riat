@@ -67,12 +67,40 @@ function riat_ui_theme($existing, $type, $theme, $path) {
     'riat_manage_relationship_form' => array(
       'arguments' => array('form' => NULL),
     ),
+    'riat_ui_base_relationship' => array(
+      'arguments' => array('tree' => NULL),
+    ),
   );
+}
+
+function theme_riat_ui_base_relationship($tree) {
+  $output = '';
+  $output .= '<div class="relationship-base">';
+  $headers = array(
+    t('Machine Name'),
+    t('Title'),
+    t('Description'),
+    t('Entity'),
+    t('Type'),
+    t('Operations'),
+  );
+  $base = array();
+  foreach ($tree as $key => $value) {
+    if (is_string($value)) {
+      $base[$key] = $value;
+    }
+  }
+  $rows[] = array_merge($base, array(riat_ui_get_operations($tree)));
+  $output .= theme('table', $headers, $rows);
+  $output .= '</div>';
+  return $output;
 }
 
 function theme_riat_manage_relationship_form($form) {
   drupal_add_tabledrag('riat-overview', 'match', 'parent', 'riat-pchid', 'riat-pchid', 'riat-chid', TRUE, MENU_MAX_DEPTH - 1);
   drupal_add_tabledrag('riat-overview', 'order', 'sibling', 'riat-weight');
+  $output = '';
+  $output .= drupal_render($form['base']);
 
   $header = array(
     t('Relationship'),
@@ -105,7 +133,6 @@ function theme_riat_manage_relationship_form($form) {
     }
   }
 
-  $output = '';
   if ($rows) {
     $output .= theme('table', $header, $rows, array('id' => 'riat-overview'));
   }
@@ -115,9 +142,10 @@ function theme_riat_manage_relationship_form($form) {
 
 function riat_ui_get_operations($item, $path = 'admin/build/relationships/%relationship/manage') {
   drupal_add_css(drupal_get_path('module', 'riat_ui') .'/css/riat_ui.css');
+  $item->chid = $item->chid ? $item->chid : 0;
   $path = str_replace('%relationship', $item->name, $path);
   $output = array();
-  $operations = module_invoke_all('riat_ui_operations', $item->object, $item->object_type);
+  $operations = module_invoke_all('riat_ui_operations', $item);
   $output[] = l('Add Child', $path .'/'. $item->chid .'/add');
   $output[] = l('Delete', $path .'/'. $item->chid .'/delete');
   return theme('item_list', $output, NULL, 'ul', array('class' => 'riat-operations'));
