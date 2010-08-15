@@ -1,16 +1,6 @@
 <?php
 
-function riat_ui_admin_relationships() {
-  $output = '';
-  
-  return $output;
-}
-
-function riat_ui_add_relationship($relationship = NULL) {
-  
-}
-
-function riat_ui_delete_relationship($relationship) {
-  db_query("DELETE FROM {riat_definition} WHERE name = '%s'", $relationship);
-  db_query("DELETE FROM {riat_tree_definition} WHERE name = '%s'", $relationship);
+function riat_ui_add_relationship_submit($form, &$form_state) {
+  $name = $form_state['values']['name'];
+  $form_state['redirect'] = "admin/build/relationships/list/$name/manage";
 }

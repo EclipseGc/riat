@@ -12,7 +12,12 @@ function riat_add_relationship($form_state, $name, $chid) {
     '#value' => $chid,
   );
   $relationship = riat_relationship_load($chid, $name);
-  $parent = riat_relationship_load($relationship->pchid, $name);
+  if ($relationship && $relationship->pchid) {
+    $parent = riat_relationship_load($relationship->pchid, $name);
+  }
+  else {
+    $parent = riat_load_definitions($name);
+  }
   $options = riat_get_relationships(array('parent_entity' => array($parent->object)));
   $plugins = array();
   foreach ($options as $key => $value) {
@@ -54,13 +59,14 @@ function riat_add_relationship($form_state, $name, $chid) {
 }
 
 function riat_add_relationship_submit($form, &$form_state) {
-  $chid = db_result(db_query("SELECT chid FROM {riat_tree_definition} WHERE name = '%s' ORDER BY chid DESC", $form_state['values']['name']));
-  $chid = $chid ? ($chid = $chid + 1) : 1;
+  $chid = riat_load_definition_relationships($form_state['values']['name'], 'high chid');
+  $chid++;
   if ($form_state['values']['pchid'] == 0) {
     $depth = 1;
   }
   else {
-    $depth = db_result(db_query("SELECT depth FROM {riat_tree_definition} WHERE name = '%s' AND chid = %d ORDER BY chid DESC", $form_state['values']['name'], $form_state['values']['pchid']));
+    $parent = riat_relationship_load($form_state['values']['pchid'], $form_state['values']['name']);
+    $depth = $parent->depth;
     $depth++;
   }
   $object = new stdClass();

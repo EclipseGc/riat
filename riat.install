@@ -17,15 +17,15 @@ function riat_schema() {
       'key' => 'name',
       'key name' => 'Name',
       'primary key' => 'name',
-      'identifier' => 'relationship',
-      'default hook' => 'default_riat_relationships',
+      'identifier' => 'definition',
+      'default hook' => 'default_riat_definition',
       'api' => array(
         'owner' => 'riat',
-        'api' => 'default_riat_relationships',
+        'api' => 'default_riat_definition',
         'minimum_version' => 3,
         'current_version' => 3,
       ),
-      'export callback' => 'riat_relationship_export',
+      //'export callback' => 'riat_relationship_export',
       //'import callback' => 'riat_relationship_import',
       'delete callback' => 'riat_relationship_delete',
     ),
@@ -71,7 +71,31 @@ function riat_schema() {
   );
   $schema['riat_tree_definition'] = array(
     'description' => t('Contains the relationship definitions for riat relationships'),
+    
+    'export' => array(
+      'key' => 'rid',
+      'key name' => 'Relationship ID',
+      'primary key' => 'rid',
+      'identifier' => 'relationship',
+      'default hook' => 'default_riat_tree',
+      'api' => array(
+        'owner' => 'riat',
+        'api' => 'default_riat_tree',
+        'minimum_version' => 3,
+        'current_version' => 3,
+      ),
+      'to hook code callback' => 'riat_relationship_to_hook_code',
+      //'list callback' => 'riat_relationship_list',
+    ),
+    
     'fields' => array(
+      'rid' => array(
+        'description' => 'The primary identifier for a relationship.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'no export' => TRUE,
+      ),
       'chid' => array(
         'type' => 'int',
         'description' => t('The chain identifier.'),
@@ -134,6 +158,10 @@ function riat_schema() {
       'depth' => array('depth'),
       'weight' => array('weight'),
     ),
+    'unique keys' => array(
+      'name_chid' => array('name', 'chid'),
+    ),
+    'primary key' => array('rid'),
   );
   return $schema;
 }

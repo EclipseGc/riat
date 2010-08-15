@@ -27,7 +27,7 @@ function riat_load_relationship_types($type = NULL) {
  *    @a3 = child id of desired component.
  */
 function riat_load_relationship_tree($relationship, $type = 'full', $a3 = NULL) {
-  $definition = db_fetch_object(db_query("SELECT * FROM {riat_definition} WHERE name = '%s'", $relationship));
+  $definition = riat_load_definitions($relationship);
   switch ($type) {
     case 'full':
       $query = db_query("SELECT * FROM {riat_tree_definition} WHERE name = '%s' ORDER BY depth", $relationship);
@@ -41,11 +41,12 @@ function riat_load_relationship_tree($relationship, $type = 'full', $a3 = NULL) 
         'name' => $relationship,
         'chid' => $result->chid,
       );
-      $results = array();
+       $definition->raw = riat_load_definition_relationships($relationship);
+       $results = array();
       riat_recursive_query("SELECT * FROM {riat_tree_definition} WHERE name = '%s' AND pchid = %d", $args, 'chid', $results);
       foreach ($results as $result) {
         $definition->tree[$result->pchid][$result->chid] = $result;
-        $definition->raw[$result->chid] = $result;
+        $definition->raw[$result->name .'_'. $result->chid] = $result;
       }
       break;
     case 'branch':
@@ -120,13 +121,57 @@ function riat_recursive_query($query_str, $args, $key, &$results) {
   }
 }
 
-function riat_relationship_load($chid, $name) {
-  if ($chid) {
-    return db_fetch_object(db_query("SELECT * FROM {riat_tree_definition} WHERE name = '%s' AND chid = %d", $name, $chid));
+function riat_relationship_load($chid = NULL, $name) {
+  if (!is_null($chid)) {
+    if ($object = db_fetch_object(db_query("SELECT * FROM {riat_tree_definition} WHERE name = '%s' AND chid = %d", $name, $chid))) {
+      return $object;
+    }
+    else {
+      $relationship = riat_load_relationships($name .'_'. $chid);
+      return $relationship ? $relationship : FALSE;
+    }
   }
   else {
-    return db_fetch_object(db_query("SELECT * FROM {riat_definition} WHERE name = '%s'", $name));
+    $definitions = riat_load_relationships();
+    foreach ($definitions as $relationship) {
+      $relationships[$relationship->name .'_'. $relationship->chid] = $relationship;
+    }
+    $query = db_query("SELECT * FROM {riat_tree_definition} WHERE name = '%s'", $name);
+    while ($result = db_fetch_object($query)) {
+      $relationships[$result->name .'_'. $result->chid] = $result;
+    }
+    return $relationships;
   }
+}
+
+function riat_load_definition_relationships($relationship, $type = 'recursive') {
+  switch ($type) {
+    case 'recursive':
+      $relationships = riat_relationship_load(NULL, $relationship);
+      $relationships = riat_relationship_recursive_sort($relationships, $relationship);
+      break;
+    case 'high chid':
+      $relationships = riat_relationship_load(NULL, $relationship);
+      $chid = 0;
+      foreach ($relationships as $relationship) {
+        if ($relationship->chid > $chid) {
+          $chid = $relationship->chid;
+        }
+      }
+      return $chid;
+  }
+  return $relationships;
+}
+
+function riat_relationship_recursive_sort($items, $name, $pchid = 0) {
+  $new_order = array();
+  foreach ($items as $item) {
+    if ($item->name == $name && $item->pchid == $pchid) {
+      $new_order[$item->name .'_'. $item->chid] = $item;
+      $new_order += riat_relationship_recursive_sort($items, $name, $item->chid);
+    }
+  }
+  return $new_order;
 }
 
 function riat_get_relationships($filter = NULL, $key = NULL) {
@@ -154,75 +199,115 @@ function riat_get_relationships($filter = NULL, $key = NULL) {
   return $results;
 }
 
-function riat_relationship_export($object, $indent) {
-  $relationship = riat_load_relationship_tree($object->name, 'recursive');
+function riat_relationship_list() {
+  $list = array();
+  $items = riat_load_relationships();
 
-  $schema = ctools_export_get_schema($object->table);
-  if (!isset($identifier)) {
-    $identifier = $schema['export']['identifier'];
+  foreach ($items as $item) {
+    $string = $item->name .'_'. $item->chid;
+    $list[$item->name .'_'. $item->chid] = check_plain($string);
   }
+  return $list;
+}
 
-  $output = $indent . '$' . $identifier . ' = new ' . get_class($object) . ";\n";
-
-  if ($schema['export']['can disable']) {
-    $output .= $indent . '$' . $identifier . '->disabled = FALSE; /* Edit this to true to make a default ' . $identifier . ' disabled initially */' . "\n";
-  }
-  if (!empty($schema['export']['api']['current_version'])) {
-    $output .= $indent . '$' . $identifier . '->api_version = ' . $schema['export']['api']['current_version'] . ";\n";
-  }
-
-  $fields = $schema['fields'];
-  if (!empty($schema['join'])) {
-    foreach ($schema['join'] as $join) {
-      if (!empty($join['load'])) {
-        foreach ($join['load'] as $join_field) {
-          $fields[$join_field] = $join['fields'][$join_field];
-        }
-      }
+function riat_relationship_to_hook_code($objects, $name) {
+  $table = 'riat_tree_definition';
+  $schema = drupal_get_schema($table);
+  $export = $schema['export'];
+  $output = '';
+  $objects = ctools_export_load_object($table, 'all', $objects);
+  if ($objects) {
+    $output = "/**\n";
+    $output .= " * Implementation of hook_{$export['default hook']}()\n";
+    $output .= " */\n";
+    $output .= "function " . $name . "_{$export['default hook']}() {\n";
+    $output .= "  \${$export['identifier']}s = array();\n\n";
+    foreach ($objects as $object) {
+      $relationship = riat_load_relationships($object->name .'_'. $object->chid);
+      $output .= ctools_export_crud_export($table, $relationship, '  ');
+      $output .= "  \${$export['identifier']}s['" . check_plain($object->name .'_'. $object->chid) . "'] = \${$export['identifier']};\n\n";
     }
-  }
-
-  // Go through our schema and joined tables and build correlations.
-  foreach ($fields as $field => $info) {
-    if (!empty($info['no export'])) {
-      continue;
-    }
-    if (!isset($object->$field)) {
-      if (isset($info['default'])) {
-        $object->$field = $info['default'];
-      }
-      else {
-        $object->$field = '';
-      }
-    }
-
-    // Note: This is the *field* export callback, not the table one!
-    if (!empty($info['export callback']) && function_exists($info['export callback'])) {
-      $output .= $indent . '$' . $identifier . '->' . $field . ' = ' . $info['export callback']($object, $field, $value, $indent) . ";\n";
-    }
-    else {
-      $value = $object->$field;
-      if ($info['type'] == 'int') {
-        $value = (isset($info['size']) && $info['size'] == 'tiny') ? (bool) $value : (int) $value;
-      }
-
-      $output .= $indent . '$' . $identifier . '->' . $field . ' = ' . ctools_var_export($value, $indent) . ";\n";
-    }
-  }
-  // Put relationships here:
-  $relationships = $relationship->raw ? $relationship->raw : array();
-  foreach ($relationships as $field => $value) {
-    $output .= $indent . '$' . $identifier . '->relationships[' . $field . '] = ' . ctools_var_export((array) $value, $indent) . ";\n";
+    $output .= "  return \${$export['identifier']}s;\n";
+    $output .= "}\n";
   }
 
   return $output;
 }
 
-function riat_relationship_import($object, $indent) {
-  //drupal_set_message('<pre>'. print_r($object, TRUE) .'</pre>');
-}
-
 function riat_relationship_delete($object) {
   db_query("DELETE FROM {riat_definition} WHERE name = '%s'", $object->name);
   db_query("DELETE FROM {riat_tree_definition} WHERE name = '%s'", $object->name);
+}
+
+function riat_load_definitions($relationship = NULL) {
+  static $cached = FALSE;
+  static $definitions = array();
+  if ($cached) {
+    if (!is_null($relationship)) {
+      return $definitions[$relationship];
+    }
+    else {
+      return $definitions;
+    }
+  }
+  $modules = module_list();
+  foreach ($modules as $module) {
+    $version = module_invoke($module, 'ctools_plugin_api', 'riat', 'default_riat_definition');
+    if ($version) {
+      module_load_include('inc', $module, "$module.default_riat_definition");
+    }
+  }
+  $definitions = module_invoke_all('default_riat_definition');
+  $objects = db_query("SELECT * FROM {riat_definition}");
+  while ($result = db_fetch_object($objects)) {
+    $definitions[$result->name] = $result;
+  }
+  foreach ($definitions as $key => $definition) {
+    $relationships = riat_load_relationships($key);
+    if ($relationships) {
+      foreach ($relationships as $chid => $item) {
+        $definitions[$key]->raw[$chid] = $item;
+      }
+    }
+  }
+  $cached = TRUE;
+  if (!is_null($relationship)) {
+    return $definitions[$relationship];
+  }
+  else {
+    return $definitions;
+  }
+}
+
+function riat_load_relationships($relationship = NULL) {
+  static $cached = FALSE;
+  static $relationships = array();
+  if ($cached) {
+    if (!is_null($relationship) && isset($relationships[$relationship])) {
+      return $relationships[$relationship];
+    }
+    else {
+      return $relationships;
+    }
+  }
+  $modules = module_list();
+  foreach ($modules as $module) {
+    $version = module_invoke($module, 'ctools_plugin_api', 'riat', 'default_riat_tree');
+    if ($version) {
+      module_load_include('inc', $module, "$module.default_riat_tree");
+    }
+  }
+  $relationships = module_invoke_all('default_riat_tree');
+  $objects = db_query("SELECT * FROM {riat_tree_definition}");
+  while ($result = db_fetch_object($objects)) {
+    unset($result->rid);
+    $relationships[$result->name .'_'. $result->chid] = $result;
+  }
+  $cached = TRUE;
+  if (!is_null($relationship)) {
+    return $relationships[$relationship];
+  }
+  else {
+    return $relationships;
+  }
 }

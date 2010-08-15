@@ -59,6 +59,8 @@ function riat_ui_form_alter(&$form, $form_state, $form_id) {
     $breadcrumb = drupal_get_breadcrumb();
     $breadcrumb[] = l($relationship->title, "admin/build/relationships/list/$relationship->name/manage");
     drupal_set_breadcrumb($breadcrumb);
+    module_load_include('inc', 'riat_ui', 'includes/riat_ui.admin');
+    $form['#submit'][] = 'riat_ui_add_relationship_submit';
   }
 }
 
