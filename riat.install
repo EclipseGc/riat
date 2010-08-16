@@ -85,7 +85,7 @@ function riat_schema() {
         'current_version' => 3,
       ),
       'to hook code callback' => 'riat_relationship_to_hook_code',
-      //'list callback' => 'riat_relationship_list',
+      'list callback' => 'riat_relationship_list',
     ),
     
     'fields' => array(
