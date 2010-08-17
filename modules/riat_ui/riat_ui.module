@@ -10,7 +10,7 @@ function riat_ui_menu() {
     'file path' => drupal_get_path('module', 'riat') .'/includes',
     'type' => MENU_CALLBACK,
   );
-  $items['admin/build/relationships/%ctools_export_ui/manage/%/delete'] = array(
+  $items['admin/build/relationships/%/manage/%/delete'] = array(
     'page callback' => 'drupal_get_form',
     'page arguments' => array('riat_ui_delete_relationship', 3, 5),
     'access arguments' => array('administer riat relationships'),
@@ -149,6 +149,8 @@ function riat_ui_get_operations($item, $path = 'admin/build/relationships/%relat
   $output = array();
   $operations = module_invoke_all('riat_ui_operations', $item);
   $output[] = l('Add Child', $path .'/'. $item->chid .'/add');
-  $output[] = l('Delete', $path .'/'. $item->chid .'/delete');
+  if ($item->rid) {
+    $output[] = l('Delete', $path .'/'. $item->chid .'/delete');
+  }
   return theme('item_list', $output, NULL, 'ul', array('class' => 'riat-operations'));
 }

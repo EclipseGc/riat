@@ -83,5 +83,14 @@ function riat_add_relationship_submit($form, &$form_state) {
 }
 
 function riat_delete_relationship($form_state, $name, $chid) {
-  
+  $form = array();
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Delete'),
+  );
+  $form['cancel'] = array(
+    
+  );
+
+  return $form;
 }

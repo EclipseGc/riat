@@ -210,6 +210,13 @@ function riat_relationship_list() {
   return $list;
 }
 
+function riat_riat_definition_tree_load($name) {
+  $explode = explode('_', $name);
+  $chid = array_pop($explode);
+  $name = implode('_', $explode);
+  return riat_relationship_load($chid, $name);
+}
+
 function riat_relationship_to_hook_code($objects, $name) {
   $table = 'riat_tree_definition';
   $schema = drupal_get_schema($table);

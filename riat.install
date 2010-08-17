@@ -86,6 +86,7 @@ function riat_schema() {
       ),
       'to hook code callback' => 'riat_relationship_to_hook_code',
       'list callback' => 'riat_relationship_list',
+      'load callback' => 'riat_riat_definition_tree_load',
     ),
     
     'fields' => array(
