@@ -25,24 +25,3 @@ function riat_ctools_plugin_directory($module, $plugin) {
     return 'plugins/' . $plugin;
   }
 }
-
-/**
- * Implementation of hook_features_export().
- */
-function riat_tree_definition_features_export($data, &$export, $module_name = "") {
-  return ctools_component_features_export('riat_tree_definition', $data, $export, $module_name);
-}
-
-/**
- * Implementation of hook_features_export_render() for both the
- * riat_definition and riat_tree_definition components.
- */
-function riat_definition_features_export_render($module, $data) {
-  return ctools_component_features_export_render('riat_definition', $module, $data);
-}
-
-function riat_tree_definition_features_export_render($module, $data) {
-  drupal_set_message('<pre>'. print_r($module, TRUE) .'</pre>');
-  drupal_set_message('<pre>'. print_r($data, TRUE) .'</pre>');
-  return ctools_component_features_export_render('riat_tree_definition', $module, $data);
-}

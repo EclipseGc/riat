@@ -69,9 +69,21 @@ class riat_export_ui extends ctools_export_ui {
     // Find the menu path.
     $menu = $form_state['plugin']['menu']['menu prefix'] .'/'. $form_state['plugin']['menu']['menu item'] .'/'. $form_state['plugin']['menu']['items']['manage']['path'];
     // Find the relationship name.
-    $ctools_export_ui = array_search('%ctools_export_ui', explode('/', $menu));
+    $menu = explode('/', $menu);
+    $ctools_export_ui = array_search('%ctools_export_ui', $menu);
+    $relationship = arg($ctools_export_ui);
+    $menu[$ctools_export_ui] = arg($ctools_export_ui);
+    $menu = implode('/', $menu);
+    $form['path'] = array(
+      '#type' => 'value',
+      '#value' => $menu,
+    );
+    $form['name'] = array(
+      '#type' => 'value',
+      '#value' => $relationship,
+    );
 
-    $tree = riat_load_relationship_tree(arg($ctools_export_ui), 'recursive');
+    $tree = riat_load_relationship_tree($relationship, 'recursive');
     $form['base'] = array(
       '#type' => 'markup',
       '#value' => theme('riat_ui_base_relationship', $tree),
@@ -79,6 +91,7 @@ class riat_export_ui extends ctools_export_ui {
     if ($tree->raw) {
       foreach ($tree->raw as $item) {
         $form[$item->chid]['#item'] = $item;
+        $form[$item->chid]['#tree'] = TRUE;
         $form[$item->chid]['title'] = array(
           '#value' => $item->object_type .' '. $item->object .' '. $item->relationship,
         );
@@ -111,6 +124,46 @@ class riat_export_ui extends ctools_export_ui {
       '#value' => t('Reset to Defaults'),
     );
     return $form;
+  }
+
+  function manage_save_form(&$form_state) {
+    $values = $form_state['values'];
+    if ($values['op'] == 'Save') {
+      foreach ($values as $key => $value) {
+        if (is_numeric($key)) {
+          if ($value['pchid'] == 0) {
+            $depth = 1;
+          }
+          else {
+            $parent = riat_relationship_load($value['pchid'], $values['name']);
+            $depth = $parent->depth;
+            $depth++;
+          }
+          $query = db_result(db_query("SELECT rid FROM {riat_tree_definition} WHERE chid = %d AND name = '%s'", $value['chid'], $values['name']));
+          if ($query) {
+            $relationship = riat_relationship_load($value['chid'], $values['name']);
+            $object = (array) $relationship;
+            unset($object['diabled']);
+            unset($object['api_version']);
+            $object['pchid'] = $value['pchid'];
+            $object['weight'] = $value['weight'];
+            $object['depth'] = $depth;
+            drupal_write_record('riat_tree_definition', $object, 'rid');
+          }
+          else {
+            $relationship = riat_relationship_load($value['chid'], $values['name']);
+            $object = (array) $relationship;
+            unset($object['diabled']);
+            unset($object['api_version']);
+            $object['pchid'] = $value['pchid'];
+            $object['weight'] = $value['weight'];
+            $object['depth'] = $depth;
+            drupal_write_record('riat_tree_definition', $object);
+          }
+        }
+      }
+      drupal_goto($values['path']);
+    }
   }
 }
 

@@ -84,13 +84,27 @@ function riat_add_relationship_submit($form, &$form_state) {
 
 function riat_delete_relationship($form_state, $name, $chid) {
   $form = array();
+  $form['name'] = array(
+    '#type' => 'value',
+    '#value' => $name,
+  );
+  $form['chid'] = array(
+    '#type' => 'value',
+    '#value' => $chid,
+  );
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Delete'),
   );
   $form['cancel'] = array(
-    
+    '#type' => 'markup',
+    '#value' => l(t('Cancel'), 'admin/build/relationships/list/'. $name .'/manage'),
   );
-
+  $form['#submit'][] = 'riat_delete_relationship_submit';
   return $form;
+}
+
+function riat_delete_relationship_submit($form, &$form_state) {
+  db_query("DELETE FROM {riat_tree_definition} WHERE name = '%s' AND chid = %d", $form_state['values']['name'], $form_state['values']['chid']);
+  drupal_goto('admin/build/relationships/list/'. $form_state['values']['name'] .'/manage');
 }

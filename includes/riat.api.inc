@@ -210,7 +210,7 @@ function riat_relationship_list() {
   return $list;
 }
 
-function riat_riat_definition_tree_load($name) {
+function riat_riat_tree_definition_load($name) {
   $explode = explode('_', $name);
   $chid = array_pop($explode);
   $name = implode('_', $explode);
