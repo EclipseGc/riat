@@ -88,7 +88,6 @@ function riat_schema() {
       'list callback' => 'riat_relationship_list',
       'load callback' => 'riat_riat_tree_definition_load',
     ),
-    
     'fields' => array(
       'rid' => array(
         'description' => 'The primary identifier for a relationship.',

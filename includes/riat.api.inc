@@ -222,7 +222,6 @@ function riat_relationship_to_hook_code($objects, $name) {
   $schema = drupal_get_schema($table);
   $export = $schema['export'];
   $output = '';
-  $objects = ctools_export_load_object($table, 'all', $objects);
   if ($objects) {
     $output = "/**\n";
     $output .= " * Implementation of hook_{$export['default hook']}()\n";
@@ -230,9 +229,9 @@ function riat_relationship_to_hook_code($objects, $name) {
     $output .= "function " . $name . "_{$export['default hook']}() {\n";
     $output .= "  \${$export['identifier']}s = array();\n\n";
     foreach ($objects as $object) {
-      $relationship = riat_load_relationships($object->name .'_'. $object->chid);
+      $relationship = riat_load_relationships($object);
       $output .= ctools_export_crud_export($table, $relationship, '  ');
-      $output .= "  \${$export['identifier']}s['" . check_plain($object->name .'_'. $object->chid) . "'] = \${$export['identifier']};\n\n";
+      $output .= "  \${$export['identifier']}s['" . check_plain($object) . "'] = \${$export['identifier']};\n\n";
     }
     $output .= "  return \${$export['identifier']}s;\n";
     $output .= "}\n";
