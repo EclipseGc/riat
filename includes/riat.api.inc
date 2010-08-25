@@ -41,11 +41,6 @@ function riat_load_relationship_tree($relationship, $type = 'full', $a3 = NULL) 
         'chid' => $result->chid,
       );
       $definition->raw = riat_load_definition_relationships($relationship);
-      $results = array();
-      riat_recursive_query("SELECT * FROM {riat_tree_definition} WHERE name = '%s' AND pchid = %d", $args, 'chid', $results);
-      foreach ($results as $result) {
-        $definition->raw[$result->name .'_'. $result->chid] = $result;
-      }
       break;
     case 'branch':
       $args = array(
@@ -119,22 +114,13 @@ function riat_recursive_query($query_str, $args, $key, &$results) {
 
 function riat_relationship_load($chid = NULL, $name) {
   if (!is_null($chid)) {
-    if ($object = db_fetch_object(db_query("SELECT * FROM {riat_tree_definition} WHERE name = '%s' AND chid = %d", $name, $chid))) {
-      return $object;
-    }
-    else {
-      $relationship = riat_load_relationships($name .'_'. $chid);
-      return $relationship ? $relationship : FALSE;
-    }
+    $relationship = riat_load_relationships($name .'_'. $chid);
+    return $relationship ? $relationship : FALSE;
   }
   else {
     $definitions = riat_load_relationships();
     foreach ($definitions as $relationship) {
       $relationships[$relationship->name .'_'. $relationship->chid] = $relationship;
-    }
-    $query = db_query("SELECT * FROM {riat_tree_definition} WHERE name = '%s'", $name);
-    while ($result = db_fetch_object($query)) {
-      $relationships[$result->name .'_'. $result->chid] = $result;
     }
     return $relationships;
   }
@@ -144,16 +130,19 @@ function riat_load_definition_relationships($relationship, $type = 'recursive') 
   switch ($type) {
     case 'recursive':
       $relationships = riat_relationship_load(NULL, $relationship);
-      uasort($relationships, 'riat_relationship_weight_sort');
-      $relationships = riat_relationship_recursive_sort($relationships, $relationship);
-      //drupal_set_message('<pre>'. print_r($relationships, TRUE) .'</pre>');
+      if ($relationships) {
+        uasort($relationships, 'riat_relationship_weight_sort');
+        $relationships = riat_relationship_recursive_sort($relationships, $relationship);
+      }
       break;
     case 'high chid':
       $relationships = riat_relationship_load(NULL, $relationship);
       $chid = 0;
-      foreach ($relationships as $relationship) {
-        if ($relationship->chid > $chid) {
-          $chid = $relationship->chid;
+      if ($relationships) {
+        foreach ($relationships as $relationship) {
+          if ($relationship->chid > $chid) {
+            $chid = $relationship->chid;
+          }
         }
       }
       return $chid;
@@ -163,10 +152,12 @@ function riat_load_definition_relationships($relationship, $type = 'recursive') 
 
 function riat_relationship_recursive_sort($items, $name, $pchid = 0) {
   $new_order = array();
-  foreach ($items as $item) {
-    if ($item->name == $name && $item->pchid == $pchid) {
-      $new_order[$item->name .'_'. $item->chid] = $item;
-      $new_order += riat_relationship_recursive_sort($items, $name, $item->chid);
+  if ($items) {
+    foreach ($items as $item) {
+      if ($item->name == $name && $item->pchid == $pchid) {
+        $new_order[$item->name .'_'. $item->chid] = $item;
+        $new_order += riat_relationship_recursive_sort($items, $name, $item->chid);
+      }
     }
   }
   return $new_order;
@@ -237,6 +228,7 @@ function riat_relationship_to_hook_code($objects, $name) {
     $output .= "  \${$export['identifier']}s = array();\n\n";
     foreach ($objects as $object) {
       $relationship = riat_load_relationships($object);
+      unset($relationship->rid);
       $output .= ctools_export_crud_export($table, $relationship, '  ');
       $output .= "  \${$export['identifier']}s['" . check_plain($object) . "'] = \${$export['identifier']};\n\n";
     }
@@ -312,9 +304,17 @@ function riat_load_relationships($relationship = NULL) {
   }
   $relationships = module_invoke_all('default_riat_tree');
   $objects = db_query("SELECT * FROM {riat_tree_definition}");
+  $in_code = FALSE;
   while ($result = db_fetch_object($objects)) {
-    unset($result->rid);
+    if (isset($relationships[$result->name .'_'. $result->chid])) {
+      $in_code = TRUE;
+    }
+    $result->conf = unserialize($result->conf);
     $relationships[$result->name .'_'. $result->chid] = $result;
+    if ($in_code) {
+      $relationships[$result->name .'_'. $result->chid]->in_code = TRUE;
+    }
+    $in_code = FALSE;
   }
   $cached = TRUE;
   if (!is_null($relationship)) {

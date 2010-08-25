@@ -149,7 +149,10 @@ function riat_ui_get_operations($item, $path = 'admin/build/relationships/%relat
   $output = array();
   $operations = module_invoke_all('riat_ui_operations', $item);
   $output[] = l('Add Child', $path .'/'. $item->chid .'/add');
-  if ($item->rid) {
+  if ($item->rid && $item->in_code) {
+    $output[] = l('Revert', $path .'/'. $item->chid .'/delete');
+  }
+  elseif ($item->rid) {
     $output[] = l('Delete', $path .'/'. $item->chid .'/delete');
   }
   return theme('item_list', $output, NULL, 'ul', array('class' => 'riat-operations'));
