@@ -32,8 +32,7 @@ function riat_load_relationship_tree($relationship, $type = 'full', $a3 = NULL) 
     case 'full':
       $query = db_query("SELECT * FROM {riat_tree_definition} WHERE name = '%s' ORDER BY depth", $relationship);
       while ($result = db_fetch_object($query)) {
-        $definition->tree[$result->pchid][$result->chid] = $result;
-        $definition->raw[$result->chid] = $result;
+        $definition->raw[$result->name .'_'. $result->chid] = $result;
       }
       break;
     case 'recursive':
@@ -41,11 +40,10 @@ function riat_load_relationship_tree($relationship, $type = 'full', $a3 = NULL) 
         'name' => $relationship,
         'chid' => $result->chid,
       );
-       $definition->raw = riat_load_definition_relationships($relationship);
-       $results = array();
+      $definition->raw = riat_load_definition_relationships($relationship);
+      $results = array();
       riat_recursive_query("SELECT * FROM {riat_tree_definition} WHERE name = '%s' AND pchid = %d", $args, 'chid', $results);
       foreach ($results as $result) {
-        $definition->tree[$result->pchid][$result->chid] = $result;
         $definition->raw[$result->name .'_'. $result->chid] = $result;
       }
       break;
@@ -57,20 +55,18 @@ function riat_load_relationship_tree($relationship, $type = 'full', $a3 = NULL) 
       $results = array();
       riat_recursive_query("SELECT * FROM {riat_tree_definition} WHERE name = '%s' AND chid = %d", $args, 'pchid', $results);
       foreach ($results as $result) {
-        $definition->tree[$result->pchid][$result->chid] = $result;
-        $definition->raw[$result->chid] = $result;
+        $definition->raw[$result->name .'_'. $result->chid] = $result;
       }
       break;
     case 'depth':
       $query = db_query("SELECT * FROM {riat_tree_definition} WHERE name = '%s' AND depth <= %d", $relationship, $a3);
       while ($result = db_fetch_object($query)) {
-        $definition->tree[$result->pchid][$result->chid] = $result;
-        $definition->raw[$result->chid] = $result;
+        $definition->raw[$result->name .'_'. $result->chid] = $result;
       }
       break;
     case 'single':
       $result = db_fetch_object(db_query("SELECT * FROM {riat_tree_definition} WHERE name = '%s' AND chid = %d", $relationship, $a3));
-      $definition->raw[$result->chid] = $result;
+      $definition->raw[$result->name .'_'. $result->chid] = $result;
   }
   drupal_alter('riat_relationship_definition', $definition, $type, $relationship, $a3);
   return $definition;
@@ -148,7 +144,9 @@ function riat_load_definition_relationships($relationship, $type = 'recursive') 
   switch ($type) {
     case 'recursive':
       $relationships = riat_relationship_load(NULL, $relationship);
+      uasort($relationships, 'riat_relationship_weight_sort');
       $relationships = riat_relationship_recursive_sort($relationships, $relationship);
+      //drupal_set_message('<pre>'. print_r($relationships, TRUE) .'</pre>');
       break;
     case 'high chid':
       $relationships = riat_relationship_load(NULL, $relationship);
@@ -172,6 +170,15 @@ function riat_relationship_recursive_sort($items, $name, $pchid = 0) {
     }
   }
   return $new_order;
+}
+
+function riat_relationship_weight_sort($a, $b) {
+  $a_weight = (is_object($a) && isset($a->weight)) ? $a->weight : 0;
+  $b_weight = (is_object($b) && isset($b->weight)) ? $b->weight : 0;
+  if ($a_weight == $b_weight) {
+    return 0;
+  }
+  return ($a_weight < $b_weight) ? -1 : 1;
 }
 
 function riat_get_relationships($filter = NULL, $key = NULL) {
