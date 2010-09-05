@@ -92,6 +92,11 @@ function riat_delete_relationship($form_state, $name, $chid) {
     '#type' => 'value',
     '#value' => $chid,
   );
+  $item = riat_load_relationships($name .'_'. $chid);
+  $relationship = riat_get_relationships(NULL, $item->relationship);
+  if (function_exists($relationship['delete form'])) {
+    $relationship['delete form']($form, $form_state, $item);
+  }
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Delete'),

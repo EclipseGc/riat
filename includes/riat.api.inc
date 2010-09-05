@@ -139,9 +139,9 @@ function riat_load_definition_relationships($relationship, $type = 'recursive') 
       $relationships = riat_relationship_load(NULL, $relationship);
       $chid = 0;
       if ($relationships) {
-        foreach ($relationships as $relationship) {
-          if ($relationship->chid > $chid) {
-            $chid = $relationship->chid;
+        foreach ($relationships as $item) {
+          if ($item->name == $relationship && $item->chid > $chid) {
+            $chid = $item->chid;
           }
         }
       }
