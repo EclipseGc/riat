@@ -1,57 +1,75 @@
 <?php
 
-function riat_load_relationship_types($type = NULL) {
-  $types = module_invoke_all('riat_relationships');
-  if (is_null($type)) {
-    return $types;
+/**
+ * Loads all relationship types provided by all modules.  If no relationship is specified then all will be returned.
+ *
+ * @key
+ *   The relationship type to return (optional).
+ */
+function riat_get_relationships($key = NULL) {
+  static $relationships;
+  if (!$relationships) {
+    $relationships = module_invoke_all('riat_relationships');
+  }
+  if (!is_null($key)) {
+    return $relationships[$key];
   }
   else {
-    return $types[$type];
+    return $relationships;
   }
+}
+
+/**
+ * Loads all relationship types conforming to a particular filter.
+ *
+ * @filter
+ *   The key/value pair to match all relationships against. e.g. array('parent_entity' => array('node'))
+ */
+function riat_filter_relationships($filter) {
+  $relationships = riat_get_relationships();
+  $results = array();
+  foreach ($relationships as $name => $relationship) {
+    $search_keys = array_keys($filter);
+    foreach ($search_keys as $term) {
+      if (isset($relationship[$term]) && $relationship[$term] == $filter[$term]) {
+        $results[$name] = $relationship['title'];
+      }
+    }
+  }
+  return $results;
 }
 
 /**
  * Loads various relationship elements.
  *
  * @type
- *  'full'
- *    Load an entire relationship tree, this is the default functionality.
+ *  'recursive'
+ *    Loads all items in a given relationship, and then orders them by hierarchy and by weight.  This is the default functionality.
  *  'branch'
  *    Loads only the relationship components within this tree that directly lead to this branch.  Does not load subsequent relationship components.
  *    @a3 = child id of desired component.
  *  'depth'
  *    Loads all relationship components to a certain depth.
  *    @a3 = desired depth.
- *  'single'
- *    Load JUST an individual chid's definition, plus the main relationship definition itself.
- *    @a3 = child id of desired component.
  */
-function riat_load_relationship_tree($relationship, $type = 'full', $a3 = NULL) {
+function riat_load_relationship_tree($relationship, $type = 'recursive', $a3 = NULL) {
   $definition = riat_load_definitions($relationship);
   switch ($type) {
-    case 'full':
-      $query = db_query("SELECT * FROM {riat_tree_definition} WHERE name = '%s' ORDER BY depth", $relationship);
-      while ($result = db_fetch_object($query)) {
-        $definition->raw[$result->name .'_'. $result->chid] = $result;
-      }
-      break;
     case 'recursive':
-      $args = array(
-        'name' => $relationship,
-        'chid' => $result->chid,
-      );
-      $definition->raw = riat_load_definition_relationships($relationship);
+      $relationships = riat_relationship_load(NULL, $relationship);
+      if ($relationships) {
+        uasort($relationships, 'riat_relationship_weight_sort');
+        $relationships = riat_relationship_recursive_sort($relationships, $relationship);
+      }
+      $definition->raw = $relationships;
       break;
     case 'branch':
-      $args = array(
-        'name' => $relationship,
-        'pchid' => $a3,
-      );
-      $results = array();
-      riat_recursive_query("SELECT * FROM {riat_tree_definition} WHERE name = '%s' AND chid = %d", $args, 'pchid', $results);
-      foreach ($results as $result) {
-        $definition->raw[$result->name .'_'. $result->chid] = $result;
+      $relationships = riat_relationship_load(NULL, $relationship);
+      if ($relationships) {
+        uasort($relationships, 'riat_relationship_weight_sort');
+        $relationships = riat_relationship_recursive_sort($relationships, $relationship, $a3);
       }
+      $definition->raw = $relationships;
       break;
     case 'depth':
       $query = db_query("SELECT * FROM {riat_tree_definition} WHERE name = '%s' AND depth <= %d", $relationship, $a3);
@@ -59,9 +77,6 @@ function riat_load_relationship_tree($relationship, $type = 'full', $a3 = NULL) 
         $definition->raw[$result->name .'_'. $result->chid] = $result;
       }
       break;
-    case 'single':
-      $result = db_fetch_object(db_query("SELECT * FROM {riat_tree_definition} WHERE name = '%s' AND chid = %d", $relationship, $a3));
-      $definition->raw[$result->name .'_'. $result->chid] = $result;
   }
   drupal_alter('riat_relationship_definition', $definition, $type, $relationship, $a3);
   return $definition;
@@ -112,6 +127,15 @@ function riat_recursive_query($query_str, $args, $key, &$results) {
   }
 }
 
+/**
+ * Loads a specific relationship or the definition if a specific child isn't requested
+ *
+ * @chid
+ *   The desired child id of a particular relationship (optional).
+ * @name
+ *   The specific relationship definition to which the child id belongs (required).
+ *   This will load the relationship definition if no child is specified.
+ */
 function riat_relationship_load($chid = NULL, $name) {
   if (!is_null($chid)) {
     $relationship = riat_load_relationships($name .'_'. $chid);
@@ -120,36 +144,26 @@ function riat_relationship_load($chid = NULL, $name) {
   else {
     $definitions = riat_load_relationships();
     foreach ($definitions as $relationship) {
-      $relationships[$relationship->name .'_'. $relationship->chid] = $relationship;
+      if ($relationship->name == $name) {
+        $relationships[$relationship->name .'_'. $relationship->chid] = $relationship;
+      }
     }
     return $relationships;
   }
 }
 
-function riat_load_definition_relationships($relationship, $type = 'recursive') {
-  switch ($type) {
-    case 'recursive':
-      $relationships = riat_relationship_load(NULL, $relationship);
-      if ($relationships) {
-        uasort($relationships, 'riat_relationship_weight_sort');
-        $relationships = riat_relationship_recursive_sort($relationships, $relationship);
-      }
-      break;
-    case 'high chid':
-      $relationships = riat_relationship_load(NULL, $relationship);
-      $chid = 0;
-      if ($relationships) {
-        foreach ($relationships as $item) {
-          if ($item->name == $relationship && $item->chid > $chid) {
-            $chid = $item->chid;
-          }
-        }
-      }
-      return $chid;
-  }
-  return $relationships;
-}
-
+/**
+ * Sorts the items in a given relationship definition recursively.
+ *
+ * @items
+ *   All items for a given relationship
+ * @name
+ *   The specific relationship.
+ * @pchid
+ *   The parent chid for the top most item at which to start.  Defaults to 0.
+ *   A specific number can be given here and all items not descended from this
+ *   item will be discarded.
+ */
 function riat_relationship_recursive_sort($items, $name, $pchid = 0) {
   $new_order = array();
   if ($items) {
@@ -163,6 +177,14 @@ function riat_relationship_recursive_sort($items, $name, $pchid = 0) {
   return $new_order;
 }
 
+/**
+ * A simple weight sorting tool for relationships.
+ *
+ * @a
+ *   The first item to compare to the second item.
+ * @b
+ *   The second item to compare to the first item.
+ */
 function riat_relationship_weight_sort($a, $b) {
   $a_weight = (is_object($a) && isset($a->weight)) ? $a->weight : 0;
   $b_weight = (is_object($b) && isset($b->weight)) ? $b->weight : 0;
@@ -172,31 +194,9 @@ function riat_relationship_weight_sort($a, $b) {
   return ($a_weight < $b_weight) ? -1 : 1;
 }
 
-function riat_get_relationships($filter = NULL, $key = NULL) {
-  static $relationships;
-  if (!$relationships) {
-    $relationships = module_invoke_all('riat_relationships');
-  }
-  if (!is_null($key)) {
-    return $relationships[$key];
-  }
-  $results = array();
-  foreach ($relationships as $name => $relationship) {
-    if ($filter) {
-      $search_keys = array_keys($filter);
-      foreach ($search_keys as $term) {
-        if (isset($relationship[$term]) && $relationship[$term] == $filter[$term]) {
-          $results[$name] = $relationship['title'];
-        }
-      }
-    }
-    else {
-      $results[$name] = $relationship['title'];
-    }
-  }
-  return $results;
-}
-
+/**
+ * Custom ctools export list callback.
+ */
 function riat_relationship_list() {
   $list = array();
   $items = riat_load_relationships();
@@ -208,6 +208,9 @@ function riat_relationship_list() {
   return $list;
 }
 
+/**
+ * Custom ctools export load callback.
+ */
 function riat_riat_tree_definition_load($name) {
   $explode = explode('_', $name);
   $chid = array_pop($explode);
@@ -215,6 +218,9 @@ function riat_riat_tree_definition_load($name) {
   return riat_relationship_load($chid, $name);
 }
 
+/**
+ * Custom ctools export 'to hook code' callback.
+ */
 function riat_relationship_to_hook_code($objects, $name) {
   $table = 'riat_tree_definition';
   $schema = drupal_get_schema($table);
@@ -242,6 +248,13 @@ function riat_relationship_to_hook_code($objects, $name) {
 function riat_relationship_delete($object) {
   db_query("DELETE FROM {riat_definition} WHERE name = '%s'", $object->name);
   db_query("DELETE FROM {riat_tree_definition} WHERE name = '%s'", $object->name);
+}
+
+function riat_relationship_chid_delete($name_chid) {
+  $explode = explode('_', $name_chid);
+  $chid = array_pop($explode);
+  $name = implode('_', $explode);
+  db_query("DELETE FROM {riat_tree_definition} WHERE name = '%s' AND chid = %d", $name, $chid);
 }
 
 function riat_load_definitions($relationship = NULL) {
@@ -323,4 +336,17 @@ function riat_load_relationships($relationship = NULL) {
   else {
     return $relationships;
   }
+}
+
+function riat_get_new_chid($relationship) {
+  $relationships = riat_relationship_load(NULL, $relationship);
+  $chid = 0;
+  if ($relationships) {
+    foreach ($relationships as $item) {
+      if ($item->name == $relationship && $item->chid > $chid) {
+        $chid = $item->chid;
+      }
+    }
+  }
+  return $chid;
 }

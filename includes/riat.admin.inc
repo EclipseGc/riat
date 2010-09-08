@@ -18,10 +18,10 @@ function riat_add_relationship($form_state, $name, $chid) {
   else {
     $parent = riat_load_definitions($name);
   }
-  $options = riat_get_relationships(array('parent_entity' => array($parent->object)));
+  $options = riat_filter_relationships(array('parent_entity' => array($parent->object)));
   $plugins = array();
   foreach ($options as $key => $value) {
-    $plugins[$key] = riat_get_relationships(NULL, $key);
+    $plugins[$key] = riat_get_relationships($key);
   }
   $form['relationship'] = array(
     '#type' => 'select',
@@ -59,7 +59,7 @@ function riat_add_relationship($form_state, $name, $chid) {
 }
 
 function riat_add_relationship_submit($form, &$form_state) {
-  $chid = riat_load_definition_relationships($form_state['values']['name'], 'high chid');
+  $chid = riat_get_new_chid($form_state['values']['name']);
   $chid++;
   if ($form_state['values']['pchid'] == 0) {
     $depth = 1;
@@ -84,6 +84,10 @@ function riat_add_relationship_submit($form, &$form_state) {
 
 function riat_delete_relationship($form_state, $name, $chid) {
   $form = array();
+  $form['info'] = array(
+    '#type' => 'markup',
+    '#value' => '<p>'. t('Altering relationships that are already in use is not advisable.  If you have begun to use this relationship and are not simply setting up your initial configuration, deleting items can result in difficulties.') .'</p>',
+  );
   $form['name'] = array(
     '#type' => 'value',
     '#value' => $name,
@@ -93,9 +97,17 @@ function riat_delete_relationship($form_state, $name, $chid) {
     '#value' => $chid,
   );
   $item = riat_load_relationships($name .'_'. $chid);
-  $relationship = riat_get_relationships(NULL, $item->relationship);
+  $form['item'] = array(
+    '#type' => 'value',
+    '#value' => $item,
+  );
+  $relationship = riat_get_relationships($item->relationship);
+  $form['relationship'] = array(
+    '#type' => 'value',
+    '#value' => $relationship,
+  );
   if (function_exists($relationship['delete form'])) {
-    $relationship['delete form']($form, $form_state, $item);
+    $relationship['delete form']($form, $form_state);
   }
   $form['submit'] = array(
     '#type' => 'submit',
@@ -105,11 +117,23 @@ function riat_delete_relationship($form_state, $name, $chid) {
     '#type' => 'markup',
     '#value' => l(t('Cancel'), 'admin/build/relationships/list/'. $name .'/manage'),
   );
+  $form['#validate'][] = 'riat_delete_relationship_validate';
   $form['#submit'][] = 'riat_delete_relationship_submit';
   return $form;
 }
 
+function riat_delete_relationship_validate(&$form, &$form_state) {
+  $relationship = $form_state['values']['relationship'];
+  if (function_exists($relationship['delete validate'])) {
+    $relationship['delete validate']($form, $form_state);
+  }
+}
+
 function riat_delete_relationship_submit($form, &$form_state) {
   db_query("DELETE FROM {riat_tree_definition} WHERE name = '%s' AND chid = %d", $form_state['values']['name'], $form_state['values']['chid']);
+  $relationship = $form_state['values']['relationship'];
+  if (function_exists($relationship['delete submit'])) {
+    $relationship['delete submit']($form, $form_state);
+  }
   drupal_goto('admin/build/relationships/list/'. $form_state['values']['name'] .'/manage');
 }

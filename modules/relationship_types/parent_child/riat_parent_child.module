@@ -57,16 +57,25 @@ function riat_parent_child_add_form($form_state, $relationship, $process) {
   return $form;
 }
 
-function riat_parent_child_delete_form(&$form, &$form_state, $item) {
-  $form['riat_parent_child_delete_options'] = array(
-    '#type' => 'radios',
-    '#title' => t('Delete Options'),
-    '#options' => array(
-      'move' => t('Move descendents up a level'),
-      'remove' => t('Remove descendents from tree'),
-    ),
-    '#description' => t('Please note that these changes will not affect pre-existing hierachy nodes, they will continue to exist, and will not be moved/removed in any instance.'),
-  );
+function riat_parent_child_delete_form(&$form, &$form_state) {
+  $item = $form['item']['#value'];
+  $children = riat_load_relationship_tree($item->name, 'branch', $item->chid);
+  if ($children->raw) {
+    $form['children'] = array(
+      '#type' => 'value',
+      '#value' => $children->raw,
+    );
+    $form['riat_parent_child_delete_options'] = array(
+      '#type' => 'radios',
+      '#title' => t('Delete Options'),
+      '#options' => array(
+        'move' => t('Move descendents up a level'),
+        'remove' => t('Remove descendents from tree'),
+      ),
+      '#description' => t('Please note that these changes will not affect pre-existing hierachy nodes, they will continue to exist, and will not be moved/removed in any instance.'),
+      '#required' => TRUE,
+    );
+  }
 }
 
 function riat_parent_child_delete_form_validate(&$form, &$form_state) {
@@ -81,7 +90,7 @@ function riat_parent_child_delete_form_validate(&$form, &$form_state) {
     $query = db_query("SELECT relationship FROM {riat_tree_definition} WHERE name = '%s' AND pchid = %d", $item->name, $item->chid);
     if ($query) {
       while ($result = db_fetch_object($query)) {
-        $relationship = riat_get_relationships(NULL, $result->relationship);
+        $relationship = riat_get_relationships($result->relationship);
         if (!in_array($parent, $relationship['parent_entity'])) {
           form_set_error('riat_parent_child_delete_options', t('One or more children of this object are not compatible children of this object\'s parent'));
         }
@@ -91,7 +100,19 @@ function riat_parent_child_delete_form_validate(&$form, &$form_state) {
 }
 
 function riat_parent_child_delete_form_submit(&$form, &$form_state) {
-  
+  if ($form_state['values']['riat_parent_child_delete_options'] == 'remove') {
+    foreach ($form_state['values']['children'] as $name_chid => $child) {
+      riat_relationship_chid_delete($name_chid);
+    }
+  }
+  if ($form_state['values']['riat_parent_child_delete_options'] == 'move') {
+    $item = $form_state['values']['item'];
+    db_query("UPDATE {riat_tree_definition} SET pchid = %d WHERE pchid = %d and name = '%s'", $item->pchid, $item->chid, $item->name);
+    $children = $form_state['values']['children'];
+    foreach ($children as $child) {
+      db_query("UPDATE {riat_tree_definition} SET depth = %d WHERE chid = %d and name = '%s'", ($child->depth - 1), $child->chid, $child->name);
+    }
+  }
 }
 
 function riat_parent_child_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
