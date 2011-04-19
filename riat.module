@@ -12,7 +12,7 @@ function riat_init() {
  */
 function riat_views_api() {
   return array(
-    'api' => 2,
+    'api' => 3,
     'path' => drupal_get_path('module', 'riat') . '/includes',
   );
 }
@@ -20,8 +20,20 @@ function riat_views_api() {
 /**
  * Implementation of hook_ctools_plugin_directory().
  */
-function riat_ctools_plugin_directory($module, $plugin) {
-  if ($module == 'riat' || $module == 'ctools' || $module == 'context_admin') {
-    return 'plugins/' . $plugin;
+function riat_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'riat' || $owner == 'ctools' || $owner == 'context_admin') {
+    return 'plugins/' . $plugin_type;
   }
+}
+
+/**
+ * Implements hook_ctools_plugin_type().
+ */
+function riat_ctools_plugin_type() {
+  ctools_include('utility');
+  $items = array();
+  // Add all the plugins that have their own declaration space elsewhere.
+  ctools_passthrough('riat', 'plugin-type', $items);
+
+  return $items;
 }

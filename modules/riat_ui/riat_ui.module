@@ -75,7 +75,8 @@ function riat_ui_theme($existing, $type, $theme, $path) {
   );
 }
 
-function theme_riat_ui_base_relationship($tree) {
+function theme_riat_ui_base_relationship($vars) {
+  $tree = $vars['tree'];
   $output = '';
   $output .= '<div class="relationship-base">';
   $headers = array(

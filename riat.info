@@ -1,8 +1,8 @@
-; $Id$
 name = "riat core"
 description = "Provides a plugin architecture to allows developers to define relationship between various types of drupal objects."
 package = "Relationship Is Already Taken"
-core = 6.x
+core = 7.x
+dependencies[] = ctools
 dependencies[] = context_admin
 
 version = 3.x-dev

@@ -81,15 +81,22 @@ function riat_ui_ctools_export_ui_form(&$form, &$form_state) {
   );
   ctools_include('dependent');
   foreach ($options as $key => $option) {
-    $form['item']['type'][$key] = array(
-      '#type' => 'select',
-      '#title' => t($option .' Type'),
-      '#description' => t('The '. $option .' type to create'),
-      '#options' => $relationship_types[$key]['allowed types'](),
-      '#process' => array('ctools_dependent_process'),
-      '#dependency' => array('edit-object' => array($key)),
-      '#default_value' => $form_state['item']->object_type,
-    );
+    if ($callback = ctools_plugin_load_function('riat', 'riat_relationships', $relationship_types[$key], 'restrictions')) {
+      $callback_options = $callback($relationship_types[$key], $key);
+      $form_options = array();
+      foreach ($callback_options as $co_key => $co_option) {
+        $form_options[$co_key] = $co_option['label'];
+      }
+      $form['item']['type'][$key] = array(
+        '#type' => 'select',
+        '#title' => t($option .' Type'),
+        '#description' => t('The '. $option .' type to create'),
+        '#options' => $form_options,
+        '#process' => array('ctools_dependent_process'),
+        '#dependency' => array('edit-object' => array($key)),
+        '#default_value' => $form_state['item']->object_type,
+      );
+    }
   }
   $form['relationships'] = array(
     '#type' => 'value',
