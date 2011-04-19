@@ -94,12 +94,13 @@ function theme_riat_ui_base_relationship($vars) {
     }
   }
   $rows[] = array_merge($base, array(riat_ui_get_operations($tree)));
-  $output .= theme('table', $headers, $rows);
+  $output .= theme('table', array('header' => $headers, 'rows' => $rows));
   $output .= '</div>';
   return $output;
 }
 
-function theme_riat_manage_relationship_form($form) {
+function theme_riat_manage_relationship_form($vars) {
+  $form = $vars['form'];
   drupal_add_tabledrag('riat-overview', 'match', 'parent', 'riat-pchid', 'riat-pchid', 'riat-chid', TRUE, MENU_MAX_DEPTH - 1);
   drupal_add_tabledrag('riat-overview', 'order', 'sibling', 'riat-weight');
   $output = '';
@@ -126,7 +127,7 @@ function theme_riat_manage_relationship_form($form) {
       $element['pchid']['#type'] = 'hidden';
   
       $row = array();
-      $row[] = theme('indentation', $element['#item']->depth - 1) . drupal_render($element['title']);
+      $row[] = theme('indentation', array('size' => $element['#item']->depth - 1)) . drupal_render($element['title']);
       $row[] = drupal_render($element['weight']) . drupal_render($element['pchid']) . drupal_render($element['chid']);
       $row[] = drupal_render($element['operations']);
   
@@ -137,7 +138,7 @@ function theme_riat_manage_relationship_form($form) {
   }
 
   if ($rows) {
-    $output .= theme('table', $header, $rows, array('id' => 'riat-overview'));
+    $output .= theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'riat-overview')));
   }
   $output .= drupal_render($form);
   return $output;
@@ -156,5 +157,5 @@ function riat_ui_get_operations($item, $path = 'admin/build/relationships/%relat
   elseif ($item->rid) {
     $output[] = l('Delete', $path .'/'. $item->chid .'/delete');
   }
-  return theme('item_list', $output, NULL, 'ul', array('class' => 'riat-operations'));
+  return theme('item_list', array('items' => $output, 'title' => NULL, 'type' => 'ul', 'attributes' => array('class' => 'riat-operations')));
 }

@@ -1,13 +1,5 @@
 <?php
 
-function riat_install() {
-  drupal_install_schema('riat');
-}
-
-function riat_uninstall() {
-  drupal_uninstall_schema('riat');
-}
-
 function riat_schema() {
   $schema = array();
   // Definition tables
@@ -46,7 +38,6 @@ function riat_schema() {
         'description' => t('The relationship chain description.'),
         'type' => 'text',
         'not null' => TRUE,
-        'default' => '',
         'size' => 'medium',
       ),
       'object' => array(

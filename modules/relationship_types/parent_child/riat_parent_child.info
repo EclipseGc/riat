@@ -1,8 +1,7 @@
-; $Id$
 name = Parent Child Relationship
 description = The parent child relationships denotes that one node will contain the others.  This is presented in a pure hierarchy in which no child ever has multiple parents, but may have multiple siblings.
 package = "Relationship Is Already Taken"
-core = 6.x
+core = 7.x
 dependencies[] = riat
 
 version = 3.x-dev

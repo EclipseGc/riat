@@ -29,7 +29,8 @@ function riat_entity_get_children($plugin, $parent) {
 }
 
 function riat_entity_restrictions($plugin, $plugin_type) {
-  $entity = entity_get_info($plugin_type);
+  list($parent, $entity_type) = explode(':', $plugin_type);
+  $entity = entity_get_info($entity_type);
   $allowed_types = array();
   if (isset($entity['bundles'])) {
     foreach($entity['bundles'] as $type => $bundle) {

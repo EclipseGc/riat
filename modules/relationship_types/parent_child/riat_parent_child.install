@@ -1,15 +1,8 @@
 <?php
 
-function riat_parent_child_install() {
-  drupal_install_schema('riat_parent_child');
-}
-
-function riat_parent_child_uninstall() {
-  drupal_uninstall_schema('riat_parent_child');
-}
-
 function riat_parent_child_schema() {
   // Data tables
+  $schema = array();
   $schema['riat_parent_child_direct'] = array(
     'description' => t('A table that holds the basic associations for all parent_child relationships.'),
     'fields' => array(

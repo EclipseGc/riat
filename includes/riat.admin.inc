@@ -101,13 +101,8 @@ function riat_delete_relationship($form_state, $name, $chid) {
     '#type' => 'value',
     '#value' => $item,
   );
-  $relationship = riat_get_relationships($item->relationship);
-  $form['relationship'] = array(
-    '#type' => 'value',
-    '#value' => $relationship,
-  );
-  if (function_exists($relationship['delete form'])) {
-    $relationship['delete form']($form, $form_state);
+  if ($callback = ctools_plugin_load_function('riat', 'riat_relationships', $item->relationship, 'delete form') && function_exists($callback)) {
+    $callback($form, $form_state);
   }
   $form['submit'] = array(
     '#type' => 'submit',
@@ -123,17 +118,18 @@ function riat_delete_relationship($form_state, $name, $chid) {
 }
 
 function riat_delete_relationship_validate(&$form, &$form_state) {
-  $relationship = $form_state['values']['relationship'];
-  if (function_exists($relationship['delete validate'])) {
-    $relationship['delete validate']($form, $form_state);
+  if ($callback = ctools_plugin_load_function('riat', 'riat_relationships', $form_state['item']->relationship, 'delete validate') && function_exists($callback)) {
+    $callback($form, $form_state);
   }
 }
 
 function riat_delete_relationship_submit($form, &$form_state) {
-  db_query("DELETE FROM {riat_tree_definition} WHERE name = '%s' AND chid = %d", $form_state['values']['name'], $form_state['values']['chid']);
-  $relationship = $form_state['values']['relationship'];
-  if (function_exists($relationship['delete submit'])) {
-    $relationship['delete submit']($form, $form_state);
+  db_delete('riat_tree_definition')
+    ->condition('name', $form_state['values']['name'])
+    ->condition('chid', $form_state['values']['chid'])
+    ->execute();
+  if ($callback = ctools_plugin_load_function('riat', 'riat_relationships', $form_state['item']->relationship, 'delete submit') && function_exists($callback)) {
+    $callback($form, $form_state);
   }
-  drupal_goto('admin/build/relationships/list/'. $form_state['values']['name'] .'/manage');
+  $form_state['redirect'] = 'admin/structure/relationships/list/'. $form_state['values']['name'] .'/manage';
 }

@@ -139,7 +139,11 @@ class riat_export_ui extends ctools_export_ui {
             $depth = $parent->depth;
             $depth++;
           }
-          $query = db_result(db_query("SELECT rid FROM {riat_tree_definition} WHERE chid = %d AND name = '%s'", $value['chid'], $values['name']));
+          $query = db_select('riat_tree_definition', 'rtd')
+            ->condition('chid', $value['chid'])
+            ->condition('name', $values['name'])
+            ->execute()
+            ->fetchField();
           if ($query) {
             $relationship = riat_relationship_load($value['chid'], $values['name']);
             $object = (array) $relationship;

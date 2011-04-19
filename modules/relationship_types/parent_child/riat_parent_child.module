@@ -82,14 +82,27 @@ function riat_parent_child_delete_form_validate(&$form, &$form_state) {
   if ($form_state['values']['riat_parent_child_delete_options'] == 'move') {
     $item = $form_state['values']['item'];
     if ($item->pchid) {
-      $parent = db_result(db_query("SELECT object FROM {riat_tree_definition} WHERE name = '%s' AND chid = %d", $item->name, $item->pchid));
+      $parent = db_select('riat_tree_definition', 'rtd')
+        ->fields('rtd', array('object'))
+        ->condition('chid', $item->pchid)
+        ->condition('name', $item->name)
+        ->execute()
+        ->fetchField();
     }
     else {
-      $parent = db_result(db_query("SELECT object FROM {riat_definition} WHERE name = '%s'", $item->name));
+      $parent = db_select('riat_definition', 'rd')
+        ->fields('rd', array('object'))
+        ->condition('name', $item->name)
+        ->execute()
+        ->fetchField();
     }
-    $query = db_query("SELECT relationship FROM {riat_tree_definition} WHERE name = '%s' AND pchid = %d", $item->name, $item->chid);
+    $query = db_select('riat_tree_definition', 'rtd')
+        ->fields('rtd', array('relationship'))
+        ->condition('pchid', $item->chid)
+        ->condition('name', $item->name)
+        ->execute();
     if ($query) {
-      while ($result = db_fetch_object($query)) {
+      foreach ($query as $result) {
         $relationship = riat_get_relationships($result->relationship);
         if (!in_array($parent, $relationship['parent_entity'])) {
           form_set_error('riat_parent_child_delete_options', t('One or more children of this object are not compatible children of this object\'s parent'));
@@ -107,16 +120,20 @@ function riat_parent_child_delete_form_submit(&$form, &$form_state) {
   }
   if ($form_state['values']['riat_parent_child_delete_options'] == 'move') {
     $item = $form_state['values']['item'];
-    db_query("UPDATE {riat_tree_definition} SET pchid = %d WHERE pchid = %d and name = '%s'", $item->pchid, $item->chid, $item->name);
+    db_update('riat_tree_definition')
+      ->fields(array('pchid' => $item->pchid))
+      ->condition('pchid', $item->chid)
+      ->condition('name', $item->name)
+      ->execute();
     $children = $form_state['values']['children'];
     foreach ($children as $child) {
-      db_query("UPDATE {riat_tree_definition} SET depth = %d WHERE chid = %d and name = '%s'", ($child->depth - 1), $child->chid, $child->name);
+      db_update('riat_tree_definition')
+        ->fields(array('depth' => ($child->depth - 1)))
+        ->condition('chid', $child->chid)
+        ->condition('name', $child->name)
+        ->execute();
     }
   }
-}
-
-function riat_parent_child_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
-  
 }
 
 function riat_parent_child_form_alter(&$form, $form_state, $form_id) {

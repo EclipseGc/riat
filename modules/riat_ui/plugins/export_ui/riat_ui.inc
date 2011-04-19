@@ -7,7 +7,7 @@ $plugin = array(
   'schema' => 'riat_definition',
   'access' => 'administer riat relationships',
   'menu' => array(
-    'menu prefix' => 'admin/build',
+    'menu prefix' => 'admin/structure',
     'menu item' => 'relationships',
     'menu title' => 'Relationships',
     'menu description' => 'Provides a mechanism for building relationship templates for future use.',
@@ -43,13 +43,13 @@ $plugin = array(
     )
   ),
   'redirect' => array(
-    'manage' => 'admin/build/relationships',
+    'manage' => 'admin/structure/relationships',
   ),
 );
 
 function riat_ui_ctools_export_ui_form(&$form, &$form_state) {
   ctools_include('plugins');
-  $relationship_types = ctools_get_plugins('riat', 'relationships');
+  $relationship_types = ctools_get_plugins('riat', 'riat_relationships');
   $form['info']['name']['#title'] = t('Type');
   $form['info']['name']['#description'] = t('The machine-readable name of this relationship template. This text will be used for constructing the URL of the create content  page for this relationship template. This name must contain only lowercase letters, numbers, and underscores. Underscores will be converted into hyphens when constructing the URL of the create content page. This name must be unique and cannot conflict with any existing content type.');
   $form['title'] = array(
@@ -81,7 +81,7 @@ function riat_ui_ctools_export_ui_form(&$form, &$form_state) {
   );
   ctools_include('dependent');
   foreach ($options as $key => $option) {
-    if ($callback = ctools_plugin_load_function('riat', 'riat_relationships', $relationship_types[$key], 'restrictions')) {
+    if ($callback = ctools_plugin_load_function('riat', 'riat_relationships', $key, 'restrictions')) {
       $callback_options = $callback($relationship_types[$key], $key);
       $form_options = array();
       foreach ($callback_options as $co_key => $co_option) {
@@ -114,7 +114,7 @@ function riat_ui_ctools_export_ui_form_submit(&$form, &$form_state) {
     if ($relationships){
       foreach ($relationships as $relationship) {
         $relationship['name'] = $form_state['values']['name'];
-        db_query("INSERT INTO {riat_tree_definition} (chid, pchid, name, object, object_type, relationship, depth, weight) VALUES (%d, %d, '%s', '%s', '%s', '%s', %d, %d)", $relationship);
+        //db_query("INSERT INTO {riat_tree_definition} (chid, pchid, name, object, object_type, relationship, depth, weight) VALUES (%d, %d, '%s', '%s', '%s', '%s', %d, %d)", $relationship);
       }
     }
   }

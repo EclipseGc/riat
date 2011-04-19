@@ -72,8 +72,12 @@ function riat_load_relationship_tree($relationship, $type = 'recursive', $a3 = N
       $definition->raw = $relationships;
       break;
     case 'depth':
-      $query = db_query("SELECT * FROM {riat_tree_definition} WHERE name = '%s' AND depth <= %d", $relationship, $a3);
-      while ($result = db_fetch_object($query)) {
+      $query = db_select('riat_tree_definition', 'rtd')
+        ->fields('rtd')
+        ->condition('rtd.name', $relationship)
+        ->condition('rtd.depth', $a3, '<=')
+        ->execute();
+      foreach ($query as $result) {
         $definition->raw[$result->name .'_'. $result->chid] = $result;
       }
       break;
@@ -92,8 +96,12 @@ function riat_load_relationship_tree($relationship, $type = 'recursive', $a3 = N
  */
 function riat_load_object_relationships($object, $id) {
   $results = array();
-  $query = db_query("SELECT * FROM {riat_direct_relationship} WHERE object = '%s', id = %d", $object, $id);
-  while ($result = db_fetch_object($query)) {
+  $query = db_select('riat_direct_relationship', 'rdr')
+    ->fields('rdr')
+    ->condition('rdr.object', $object)
+    ->condition('rdr.id', $id)
+    ->execute();
+  foreach ($query as $result) {
     $results[$result->name] = $result;
   }
   return $results;
@@ -106,23 +114,34 @@ function riat_load_object_relationships($object, $id) {
  * Top level arguments are expected to be 0, commonly following
  * the pchid element for most riat queries.
  *
- * @query_str
- *  The string intended to be run through db_query.  This query should only return a single result.
+ * @table
+ *  The table to select against.
+ * @alias
+ *  The alias for the table variable
+ * @fields
+ *  The fields array for db_select()->fields()
  * @args
- *  A keyed array of arguments to be passed to our query.  The same $key passed to us will be reset to new $result->$key of the query in $args[$key] = $result->$key format.
+ *  A keyed array of arguments to be passed to our query.  The same $key passed to us will be reset to new $result->$key of the query in $args[$key]['value'] = $result->$key format.
  * @key
  *  The key of the element to pass into subsequent queries as $args[$key].
  * @results
  *  An array of previous results passed by reference.
  */
 
-function riat_recursive_query($query_str, $args, $key, &$results) {
-  $query = db_query($query_str, $args);
-  while ($result = db_fetch_object($query)) {
+function riat_recursive_query($table, $alias, $fields, $args, $key, &$results) {
+  $arg_default = array('operator' => '=');
+  $query = db_select($table, $alias)
+    ->fields($alias, $fields);
+  foreach ($args as $field => $arg) {
+    $arg += $arg_default;
+    $query->condition($alias . '.' . $field, $arg['value'], $arg['operator']);
+  }
+  $query->execute();
+  foreach ($query as $result) {
     $results[] = $result;
     if ($result->$key) {
-      $args[$key] = $result->$key;
-      riat_recursive_query($query_str, $args, $key, $results);
+      $args[$key]['value'] = $result->$key;
+      riat_recursive_query($table, $alias, $fields, $args, $key, &$results);
     }
   }
 }
@@ -246,15 +265,24 @@ function riat_relationship_to_hook_code($objects, $name) {
 }
 
 function riat_relationship_delete($object) {
-  db_query("DELETE FROM {riat_definition} WHERE name = '%s'", $object->name);
-  db_query("DELETE FROM {riat_tree_definition} WHERE name = '%s'", $object->name);
+  $definition = db_delete('riat_definition')
+    ->condition('name', $object->name)
+    ->execute();
+  $tree = db_delete('riat_tree_definition')
+    ->condition('name', $object->name)
+    ->execute();
+  return array('definition' => $definition, 'tree' => $tree);
 }
 
 function riat_relationship_chid_delete($name_chid) {
   $explode = explode('_', $name_chid);
   $chid = array_pop($explode);
   $name = implode('_', $explode);
-  db_query("DELETE FROM {riat_tree_definition} WHERE name = '%s' AND chid = %d", $name, $chid);
+  $tree = db_delete('riat_tree_definition')
+    ->condition('name', $name)
+    ->condition('chid', $chid)
+    ->execute();
+  return $tree;
 }
 
 function riat_load_definitions($relationship = NULL) {
@@ -276,8 +304,10 @@ function riat_load_definitions($relationship = NULL) {
     }
   }
   $definitions = module_invoke_all('default_riat_definition');
-  $objects = db_query("SELECT * FROM {riat_definition}");
-  while ($result = db_fetch_object($objects)) {
+  $objects = db_select('riat_definition', 'rd')
+    ->fields('rd')
+    ->execute();
+  foreach ($objects as $result) {
     $definitions[$result->name] = $result;
   }
   foreach ($definitions as $key => $definition) {
@@ -316,9 +346,11 @@ function riat_load_relationships($relationship = NULL) {
     }
   }
   $relationships = module_invoke_all('default_riat_tree');
-  $objects = db_query("SELECT * FROM {riat_tree_definition}");
+  $objects = db_select('riat_tree_definition', 'rtd')
+    ->fields('rtd')
+    ->execute();
   $in_code = FALSE;
-  while ($result = db_fetch_object($objects)) {
+  foreach ($objects as $result) {
     if (isset($relationships[$result->name .'_'. $result->chid])) {
       $in_code = TRUE;
     }
