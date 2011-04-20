@@ -101,7 +101,7 @@ function riat_delete_relationship($form_state, $name, $chid) {
     '#type' => 'value',
     '#value' => $item,
   );
-  if ($callback = ctools_plugin_load_function('riat', 'riat_relationships', $item->relationship, 'delete form') && function_exists($callback)) {
+  if ($callback = ctools_plugin_load_function('riat', 'objects', $item->relationship, 'delete form') && function_exists($callback)) {
     $callback($form, $form_state);
   }
   $form['submit'] = array(
@@ -118,7 +118,7 @@ function riat_delete_relationship($form_state, $name, $chid) {
 }
 
 function riat_delete_relationship_validate(&$form, &$form_state) {
-  if ($callback = ctools_plugin_load_function('riat', 'riat_relationships', $form_state['item']->relationship, 'delete validate') && function_exists($callback)) {
+  if ($callback = ctools_plugin_load_function('riat', 'objects', $form_state['item']->relationship, 'delete validate') && function_exists($callback)) {
     $callback($form, $form_state);
   }
 }
@@ -128,7 +128,7 @@ function riat_delete_relationship_submit($form, &$form_state) {
     ->condition('name', $form_state['values']['name'])
     ->condition('chid', $form_state['values']['chid'])
     ->execute();
-  if ($callback = ctools_plugin_load_function('riat', 'riat_relationships', $form_state['item']->relationship, 'delete submit') && function_exists($callback)) {
+  if ($callback = ctools_plugin_load_function('riat', 'objects', $form_state['item']->relationship, 'delete submit') && function_exists($callback)) {
     $callback($form, $form_state);
   }
   $form_state['redirect'] = 'admin/structure/relationships/list/'. $form_state['values']['name'] .'/manage';

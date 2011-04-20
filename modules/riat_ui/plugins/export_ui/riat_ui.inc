@@ -49,7 +49,7 @@ $plugin = array(
 
 function riat_ui_ctools_export_ui_form(&$form, &$form_state) {
   ctools_include('plugins');
-  $relationship_types = ctools_get_plugins('riat', 'riat_relationships');
+  $relationship_types = ctools_get_plugins('riat', 'objects');
   $form['info']['name']['#title'] = t('Type');
   $form['info']['name']['#description'] = t('The machine-readable name of this relationship template. This text will be used for constructing the URL of the create content  page for this relationship template. This name must contain only lowercase letters, numbers, and underscores. Underscores will be converted into hyphens when constructing the URL of the create content page. This name must be unique and cannot conflict with any existing content type.');
   $form['title'] = array(
@@ -81,7 +81,7 @@ function riat_ui_ctools_export_ui_form(&$form, &$form_state) {
   );
   ctools_include('dependent');
   foreach ($options as $key => $option) {
-    if ($callback = ctools_plugin_load_function('riat', 'riat_relationships', $key, 'restrictions')) {
+    if ($callback = ctools_plugin_load_function('riat', 'objects', $key, 'restrictions')) {
       $callback_options = $callback($relationship_types[$key], $key);
       $form_options = array();
       foreach ($callback_options as $co_key => $co_option) {
